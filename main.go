@@ -3,15 +3,21 @@ package main
 import (
 	_ "github.com/mmirolim/yalp-go/routers"
 	"github.com/mmirolim/yalp-go/controllers"
+	"github.com/mmirolim/yalp-go/models"
 	"github.com/astaxie/beego"
 	"github.com/beego/i18n"
 )
 
-const (
-	APP_VER = "0.0.1"
-)
 func initialize() {
+	// set constants for controllers
+	controllers.AppVer = beego.AppConfig.String("appver")
+	controllers.APP	= beego.AppConfig.String("appname")
+	controllers.IsPro = beego.RunMode == "prod"
+
+	// init controllers
 	controllers.InitApp()
+	// init connection to mongodb
+	models.InitConnection()
 }
 func main() {
 	initialize()

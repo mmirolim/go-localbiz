@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	APP string
 	AppVer string
 	IsPro bool
 	langTypes []*langType
@@ -27,6 +28,14 @@ func (this *baseController) Prepare() {
 	// Setting properties
 	this.Data["AppVer"] = AppVer
 	this.Data["IsPro"]  = IsPro
+	this.Data["APP"] = APP
+
+	// set default layout and layout sections
+	this.Layout = "layout.tpl"
+	this.LayoutSections = make(map[string]string)
+	this.LayoutSections["Header"] = "header.tpl"
+	this.LayoutSections["Footer"] = "footer.tpl"
+
 	// Redirect to make URL clean
 	if this.setLangVer() {
 		i := strings.Index(this.Ctx.Request.RequestURI, "?")

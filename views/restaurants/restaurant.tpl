@@ -1,1 +1,0 @@
-<h1>This template for restaurant page</h1>
