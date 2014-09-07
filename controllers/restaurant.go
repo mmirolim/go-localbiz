@@ -1,14 +1,14 @@
 package controllers
 
 import (
-	"github.com/astaxie/beego"
 )
 
 type RestaurantCtrl struct {
-	beego.Controller
+	baseController
 }
 
 func (this *RestaurantCtrl) Get() {
+	this.Data["Lang"] = this.Lang
 	this.Data["Title"] = "Restaurant Title"
 	this.Data["Desc"] = "Restaurant info"
 	this.TplNames = "index.tpl"

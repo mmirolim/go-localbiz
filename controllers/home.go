@@ -1,14 +1,15 @@
 package controllers
 
 import (
-	"github.com/astaxie/beego"
+
 )
 
-type MainController struct {
-	beego.Controller
+type HomeController struct {
+	baseController
 }
 
-func (this *MainController) Get() {
+func (this *HomeController) Get() {
+	this.Data["Lang"] = this.Lang
 	this.Data["Title"] = "Yalp.uz"
 	this.Data["Name"] = "My name is Mirolim!"
 	this.Layout = "layout.tpl"
@@ -16,4 +17,5 @@ func (this *MainController) Get() {
     this.LayoutSections = make(map[string]string)
 	this.LayoutSections["Header"] = "header.tpl"
 	this.LayoutSections["Footer"] = "footer.tpl"
+
 }
