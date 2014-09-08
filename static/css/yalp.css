@@ -1,5 +1,10 @@
 .container { width: 90%; }
 
+address span {
+    width: 100%;
+    display: inline-block;
+}
+
 @media (min-width: 48em) /* 768px */ { 
 	.container { width: 620px; } 
 }

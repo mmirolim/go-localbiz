@@ -12,7 +12,7 @@
       <header>
           [[ .Header ]]
       </header>
-      <div class="container">
+      <div class="container align-center">
           [[ .LayoutContent ]]
       </div>
       <footer>

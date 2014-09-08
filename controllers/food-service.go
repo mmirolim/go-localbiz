@@ -19,7 +19,7 @@ func (this *FoodServiceCtrl) Get() {
 	this.Data["Title"] = "Title - District - City | APPNAME"
 	this.TplNames = "food-service/food-service.tpl"
 
-	foodService, err := models.FoodServices.FindOne(bson.M{ "name" : "Elixir" })
+	foodService, err := models.FoodServices.FindOne(bson.M{ "name" : "Gary Danko" })
 	if err != nil {
 		beego.Error(err)
 		return

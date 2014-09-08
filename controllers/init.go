@@ -36,12 +36,8 @@ func (this *baseController) Prepare() {
 	this.LayoutSections["Header"] = "header.tpl"
 	this.LayoutSections["Footer"] = "footer.tpl"
 
-	// Redirect to make URL clean
-	if this.setLangVer() {
-		i := strings.Index(this.Ctx.Request.RequestURI, "?")
-		this.Redirect(this.Ctx.Request.RequestURI[:i], 302)
-		return
-	}
+	// set language
+	this.setLangVer()
 
 }
 
@@ -66,27 +62,12 @@ func initLocales() {
 }
 
 // set lang to use
-func (this *baseController) setLangVer() bool {
-	var isNeedRedir, hasCookie = false, false
+func (this *baseController) setLangVer() {
 
-	// 1. Check URL arguments.
+	// Check URL arguments.
 	lang := this.Input().Get("lang")
 
-	// 2. Get lang information from cookies
-	if len(lang) == 0 {
-		lang = this.Ctx.GetCookie("lang")
-		hasCookie = true
-	} else {
-		isNeedRedir = true
-	}
-
-	// Check if lang in cookie exists
-	if !i18n.IsExist(lang) {
-		lang = ""
-		isNeedRedir, hasCookie = false, false
-	}
-
-	// 3. Get language info from 'Accept-Language'
+	// Get language info from 'Accept-Language'
 	if len(lang) == 0 {
 		al := this.Ctx.Request.Header.Get("Accept-Language")
 		if len(al) > 4 {
@@ -97,19 +78,13 @@ func (this *baseController) setLangVer() bool {
 		}
 	}
 
-	// 4. Set default lang
+	// Set default lang
 	if len(lang) == 0 {
 		lang = "ru-RU"
-		isNeedRedir = false
 	}
 
 	currentLang := langType {
 		Lang : lang,
-	}
-
-	// Save lang in cookies
-	if !hasCookie {
-		this.Ctx.SetCookie("lang", currentLang.Lang, 1 << 31-1, "/")
 	}
 
 	restLangs := make([]*langType, 0, len(langTypes) - 1)
@@ -127,8 +102,7 @@ func (this *baseController) setLangVer() bool {
 	this.Data["CurrentLang"] = currentLang.Name
 	this.Data["ResLangs"] = restLangs
 
-	// return if redirect needed
-	return isNeedRedir
+
 }
 
 func InitApp() {

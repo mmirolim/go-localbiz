@@ -27,33 +27,33 @@ type FoodService struct {
 	Address     		 `bson:"address"`
 	Name        string   `bson:"name"`
 	Description string   `bson:"description"`
-	Dresscode   string   `bson:"dresscode"`
+	DressCode   string   `bson:"dressCode"`
 	Fax         string   `bson:"fax"`
 	Email       string   `bson:"email"`
-	Orderphone  string   `bson:"orderPhone"`
-	Workdays    string   `bson:"workHours"`
+	OrderPhone  string   `bson:"orderPhone"`
+	WorkHours    string   `bson:"workHours"`
 	Halls       string   `bson:"halls"`
 	Company     string   `bson:"company"`
 	Cabins      string   `bson:"cabins"`
-	Cuisine     []string `bson:"cuisine"`
+	Cuisines    []string `bson:"cuisines"`
 	Sits        int16    `bson:"sits"`
 	Music       []string `bson:"music"`
-	Refloc      string   `bson:"refLoc"`
+	RefLoc      string   `bson:"refLoc"`
 	Features    []string `bson:"features"`
 	Parking     string   `bson:"parking"`
 	Site        string   `bson:"site"`
 	Phones      []string `bson:"tels"`
 	Terminal    string   `bson:"terminal"`
-	Restype     []string `bson:"types"`
+	Types        []string `bson:"types"`
 	Transport   string   `bson:"trasport"`
-	Goodfor     []string `bson:"goodFor"`
+	GoodFor     []string `bson:"goodFor"`
 	Price       string   `bson:"price"`
 	Lang        string   `bson:"lang"`
 	GeoJson     		 `bson:"loc,omitempty"`
 	Slug		string   `bson:"slug"`
 	Deleted		bool 	 `bson:"deleted"`
-	Updated		time.Time `bson:"updatedAt"`
-	Created		time.Time `bson:"createdAt"`
+	UpdatedAt		time.Time `bson:"updatedAt"`
+	CreatedAt		time.Time `bson:"createdAt"`
 	CreatedBy	string   `bson:"createdBy"`
 	UpdatedBy	string   `bson:"updatedBy"`
 }
