@@ -17,16 +17,20 @@ func (this *FoodServiceCtrl) Get() {
 	//@todo implement
 
 	this.Data["Title"] = "Title - District - City | APPNAME"
-	this.Data["Desc"] = "Restaurant info"
 	this.TplNames = "food-service/food-service.tpl"
 
-	foodService, err := models.FoodServices.FindOne(bson.M{ "name" : "Gary Danko" })
+	foodService, err := models.FoodServices.FindOne(bson.M{ "name" : "Elixir" })
 	if err != nil {
 		beego.Error(err)
 		return
 	}
+	nearResult, err := models.FoodServices.FindNear(1, 1000, foodService.GeoJson)
+	if err == nil {
+		this.Data["NearResult"] = nearResult
+	} else {
+		beego.Warn(err)
+	}
 
-	this.Data["Title"] = foodService.Name
-	this.Data["Desc"] = foodService.Description
+	this.Data["Entity"] = foodService
 
 }

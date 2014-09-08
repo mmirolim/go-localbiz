@@ -52,10 +52,28 @@ type FoodService struct {
 	GeoJson     		 `bson:"loc,omitempty"`
 	Slug		string   `bson:"slug"`
 	Deleted		bool 	 `bson:"deleted"`
-	Updated		time.Time`bson:"updatedAt"`
-	Created		time.Time`bson:"createdAt"`
+	Updated		time.Time `bson:"updatedAt"`
+	Created		time.Time `bson:"createdAt"`
 	CreatedBy	string   `bson:"createdBy"`
 	UpdatedBy	string   `bson:"updatedBy"`
+}
+type NearStats struct {
+	NScanned uint32 `bson:"nscanned"`
+	ObjLoaded uint32 `bson:"objectsLoaded"`
+	AvrDis	float32	`bson:"avgDistance"`
+	MaxDis	float32	`bson:"maxDistance"`
+	time	int32	`bson:"time"`
+}
+// struct to store Near FoodServices result from mongo
+type NearFoodService struct {
+	Dis	float32	`bson:"dis"`
+	Obj	FoodService `bson:"obj"`
+}
+
+type NearResult struct {
+	Results []NearFoodService
+	Stats	NearStats
+	Ok	float32
 }
 
 func (f FoodService) FindOne(b bson.M) (FoodService, error) {
@@ -70,3 +88,23 @@ func (f FoodService) FindOne(b bson.M) (FoodService, error) {
 	}
 	return foodService, err
 }
+
+func (f FoodService) FindNear(min, max int, loc GeoJson) (NearResult, error) {
+	var nfs NearResult
+	session := Session.Copy()
+	defer session.Close()
+
+	err := session.DB(Db).Run(bson.D{
+		{"geoNear", "foodServices" },
+		{"near", bson.D{ {"type", "Point"}, {"coordinates", loc.Coordinates}}},
+		{"spherical", true},
+		{"minDistance", min},
+		{"maxDistance", max},
+		}, &nfs)
+	if err != nil {
+		beego.Error(err)
+	}
+
+	return nfs, err
+}
+
