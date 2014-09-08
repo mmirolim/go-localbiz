@@ -7,8 +7,8 @@ import (
 
 // connection
 var (
-	Host string
-	Db	 string
+	Host    string
+	Db      string
 	Session *mgo.Session
 )
 

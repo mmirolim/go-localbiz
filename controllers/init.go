@@ -3,20 +3,22 @@ package controllers
 import (
 	"strings"
 
-	"github.com/beego/i18n"
 	"github.com/astaxie/beego"
+	"github.com/beego/i18n"
 )
 
 var (
-	APP string
-	AppVer string
-	IsPro bool
+	APP       string
+	AppVer    string
+	IsPro     bool
 	langTypes []*langType
 )
+
 // languages struct
 type langType struct {
 	Lang, Name string
 }
+
 // base router with global settings for all other routers
 type baseController struct {
 	beego.Controller
@@ -27,7 +29,7 @@ type baseController struct {
 func (this *baseController) Prepare() {
 	// Setting properties
 	this.Data["AppVer"] = AppVer
-	this.Data["IsPro"]  = IsPro
+	this.Data["IsPro"] = IsPro
 	this.Data["APP"] = APP
 
 	// set default layout and layout sections
@@ -48,12 +50,12 @@ func initLocales() {
 	langTypes = make([]*langType, 0, len(langs))
 
 	for i, v := range langs {
-		langTypes = append(langTypes, &langType{ Lang: v, Name: names[i]})
+		langTypes = append(langTypes, &langType{Lang: v, Name: names[i]})
 	}
 
 	for _, lang := range langs {
 		beego.Trace("Loading language" + lang)
-		if err := i18n.SetMessage(lang, "conf/locale_" + lang + ".ini"); err != nil {
+		if err := i18n.SetMessage(lang, "conf/locale_"+lang+".ini"); err != nil {
 			beego.Error("Fail to set message file: " + err.Error())
 			return
 		}
@@ -83,11 +85,11 @@ func (this *baseController) setLangVer() {
 		lang = "ru-RU"
 	}
 
-	currentLang := langType {
-		Lang : lang,
+	currentLang := langType{
+		Lang: lang,
 	}
 
-	restLangs := make([]*langType, 0, len(langTypes) - 1)
+	restLangs := make([]*langType, 0, len(langTypes)-1)
 	for _, v := range langTypes {
 		if lang != v.Lang {
 			restLangs = append(restLangs, v)
@@ -101,7 +103,6 @@ func (this *baseController) setLangVer() {
 	this.Data["Lang"] = currentLang.Lang
 	this.Data["CurrentLang"] = currentLang.Name
 	this.Data["ResLangs"] = restLangs
-
 
 }
 

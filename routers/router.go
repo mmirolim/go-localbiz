@@ -1,8 +1,8 @@
 package routers
 
 import (
-	"github.com/mmirolim/yalp-go/controllers"
 	"github.com/astaxie/beego"
+	"github.com/mmirolim/yalp-go/controllers"
 )
 
 func init() {

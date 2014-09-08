@@ -1,17 +1,17 @@
 package main
 
 import (
-	_ "github.com/mmirolim/yalp-go/routers"
-	"github.com/mmirolim/yalp-go/controllers"
-	"github.com/mmirolim/yalp-go/models"
 	"github.com/astaxie/beego"
 	"github.com/beego/i18n"
+	"github.com/mmirolim/yalp-go/controllers"
+	"github.com/mmirolim/yalp-go/models"
+	_ "github.com/mmirolim/yalp-go/routers"
 )
 
 func initialize() {
 	// set constants for controllers
 	controllers.AppVer = beego.AppConfig.String("appver")
-	controllers.APP	= beego.AppConfig.String("appname")
+	controllers.APP = beego.AppConfig.String("appname")
 	controllers.IsPro = beego.RunMode == "prod"
 
 	// init controllers
@@ -31,10 +31,8 @@ func main() {
 	beego.TemplateLeft = "[["
 	beego.TemplateRight = "]]"
 
-
 	// register a i18n template func
 	beego.AddFuncMap("i18n", i18n.Tr)
 
 	beego.Run()
 }
-

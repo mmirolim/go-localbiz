@@ -1,9 +1,9 @@
 package controllers
 
 import (
+	"github.com/astaxie/beego"
 	"github.com/mmirolim/yalp-go/models"
 	"gopkg.in/mgo.v2/bson"
-	"github.com/astaxie/beego"
 )
 
 type FoodServiceCtrl struct {
@@ -16,7 +16,7 @@ func (this *FoodServiceCtrl) Get() {
 	// get FoodService by slug
 	slug := this.Ctx.Input.Param(":slug")
 
-	foodService, err := models.FoodServices.FindOne(bson.M{ "slug" : slug })
+	foodService, err := models.FoodServices.FindOne(bson.M{"slug": slug})
 	if err != nil {
 		beego.Error(err)
 		this.Abort("404")

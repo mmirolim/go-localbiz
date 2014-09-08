@@ -33,3 +33,4 @@
     <li>[[ $val.Obj.Name ]] - [[ $val.Dis ]] m</li>
     [[ end ]]
 </ul>
+<h1>[[ .Entity.Id ]]</h1>
