@@ -14,15 +14,12 @@ func (this *FoodServiceCtrl) Get() {
 	this.Data["Lang"] = this.Lang
 
 	// get FoodService by slug
-	//@todo implement
+	slug := this.Ctx.Input.Param(":slug")
 
-	this.Data["Title"] = "Title - District - City | APPNAME"
-	this.TplNames = "food-service/food-service.tpl"
-
-	foodService, err := models.FoodServices.FindOne(bson.M{ "name" : "Gary Danko" })
+	foodService, err := models.FoodServices.FindOne(bson.M{ "slug" : slug })
 	if err != nil {
 		beego.Error(err)
-		return
+		this.Abort("404")
 	}
 	nearResult, err := models.FoodServices.FindNear(1, 1000, foodService.GeoJson)
 	if err == nil {
@@ -31,6 +28,8 @@ func (this *FoodServiceCtrl) Get() {
 		beego.Warn(err)
 	}
 
+	this.Data["Title"] = "Title - District - City | APPNAME"
+	this.TplNames = "food-service/food-service.tpl"
 	this.Data["Entity"] = foodService
 
 }

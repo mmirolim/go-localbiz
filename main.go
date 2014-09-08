@@ -34,6 +34,7 @@ func main() {
 
 	// register a i18n template func
 	beego.AddFuncMap("i18n", i18n.Tr)
+
 	beego.Run()
 }
 

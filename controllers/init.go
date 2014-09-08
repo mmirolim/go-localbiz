@@ -79,7 +79,7 @@ func (this *baseController) setLangVer() {
 	}
 
 	// Set default lang
-	if len(lang) == 0 {
+	if len(lang) == 0 || !i18n.IsExist(lang) {
 		lang = "ru-RU"
 	}
 
