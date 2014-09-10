@@ -38,3 +38,31 @@ func (this *FoodServiceCtrl) Get() {
 	this.Data["CtrlSlug"] = this.Slug()
 
 }
+
+// method to process fs category requests
+func (this *FoodServiceCtrl) Category() {
+	// get attr, tag and city
+	attr := this.Ctx.Input.Param(":attr")
+	tag := this.Ctx.Input.Param(":tag")
+	city := this.Ctx.Input.Param(":city")
+
+	// get all places with cat and city
+	fds, err := models.FoodServices.Find(bson.D{ { "lang", this.Lang }, {attr , tag} , { "address.city", city} })
+	check("FSCtrl.Category -> ", err)
+	count := len(fds)
+	this.TplNames = "food-service/category.tpl"
+
+	this.Data["Data"] = struct {
+		Category string
+		City	string
+		FdsList []models.FoodService
+		Count int
+	}{
+		tag,
+		city,
+		fds,
+		count,
+	}
+
+
+}

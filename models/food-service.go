@@ -1,7 +1,6 @@
 package models
 
 import (
-	"github.com/astaxie/beego"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"time"
@@ -124,14 +123,6 @@ type Near struct {
 	Ok    float32
 }
 
-func check(s string, e error) bool {
-	if e != nil {
-		beego.Error(s + e.Error())
-		return true
-	}
-	return false
-}
-
 func (f FoodService) GetC() string {
 	return "foodServices"
 }
@@ -150,12 +141,27 @@ func (f FoodService) InitIndex() (bool, error) {
 	return true, err
 }
 
+func (f FoodService) Find(b bson.D) ([]FoodService, error) {
+	var fds []FoodService
+	session := Session.Copy()
+	defer session.Close()
+
+	foodServices := session.DB(Db).C(f.GetC())
+	// limit is important when all used, may consume all memory
+	// @todo maybe memory consumption reduces if not all fields retrieved?
+	iter := foodServices.Find(b).Limit(5000).Iter()
+	err := iter.All(&fds)
+	check("FoodService FindOne -> ", err)
+
+	return fds, err
+}
+
 func (f FoodService) FindOne(b bson.M) (FoodService, error) {
 	var fds FoodService
 	session := Session.Copy()
 	defer session.Close()
 
-	foodServices := session.DB(Db).C(fds.GetC())
+	foodServices := session.DB(Db).C(f.GetC())
 	err := foodServices.Find(b).One(&fds)
 	check("FoodService FindOne -> ", err)
 

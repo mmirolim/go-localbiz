@@ -25,6 +25,22 @@ type baseController struct {
 	i18n.Locale
 }
 
+func check(s string, e error) bool {
+	if e != nil {
+		beego.Error(s + e.Error())
+		return true
+	}
+	return false
+}
+
+func GetUrl(s ...string) string {
+	var url string
+	for _, v := range s {
+		url += "/" + v
+	}
+	return url
+}
+
 // implement Prepare method for base router
 func (this *baseController) Prepare() {
 	// Setting properties
@@ -108,4 +124,6 @@ func (this *baseController) setLangVer() {
 
 func InitApp() {
 	initLocales()
+	// register getUrl func
+	beego.AddFuncMap("getUrl", GetUrl)
 }

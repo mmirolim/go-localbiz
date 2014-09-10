@@ -20,6 +20,14 @@ type NearStats struct {
 	time      int32   `bson:"time"`
 }
 
+func check(s string, e error) bool {
+	if e != nil {
+		beego.Error(s + e.Error())
+		return true
+	}
+	return false
+}
+
 func InitConnection() {
 	Host = beego.AppConfig.String("db::host")
 	Db = beego.AppConfig.String("db::db")
