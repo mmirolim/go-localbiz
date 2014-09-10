@@ -29,8 +29,8 @@
 
 <h4 class="color-gray">[[i18n .Lang "around-1km" ]]</h4>
 <ul>
-    [[ range $key, $val := .NearResult.Results ]]
-    <li>[[ $val.Obj.Name ]] - [[ $val.Dis ]] m</li>
+    [[ $ctrlSlug := .CtrlSlug]]
+    [[ range $key, $val := .Near.Results ]]
+    <li><a href="/[[ $ctrlSlug ]]/[[ $val.Obj.Slug ]]">[[ $val.Obj.Name ]]</a> - [[ $val.Dis ]] m</li>
     [[ end ]]
 </ul>
-<h1>[[ .Entity.Id ]]</h1>

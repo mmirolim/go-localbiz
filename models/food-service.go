@@ -2,12 +2,68 @@ package models
 
 import (
 	"github.com/astaxie/beego"
+	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"time"
 )
 
 var (
 	FoodServices FoodService
+	// define indexes
+	indexes = []mgo.Index{
+		mgo.Index{
+			Key: []string{"name"},
+		},
+		mgo.Index{
+			Key: []string{"lang", "-name"},
+		},
+		mgo.Index{
+			Key: []string{"slug"},
+		},
+		mgo.Index{
+			Key: []string{"slug", "lang"},
+			Unique: true,
+		},
+		mgo.Index{
+			Key:  []string{"$2dsphere:loc"},
+		},
+		mgo.Index{
+			Key: []string{"price", "name"},
+		},
+		mgo.Index{
+			Key: []string{"goodFor", "name"},
+		},
+		mgo.Index{
+			Key: []string{"music", "name"},
+		},
+		mgo.Index{
+			Key: []string{"features", "name"},
+		},
+		mgo.Index{
+			Key: []string{"types", "name"},
+		},
+		mgo.Index{
+			Key: []string{"address.city", "name"},
+		},
+		mgo.Index{
+			Key: []string{"address.district", "name"},
+		},
+		mgo.Index{
+			Key: []string{"deleted"},
+		},
+		mgo.Index{
+			Key: []string{"updatedBy"},
+		},
+		mgo.Index{
+			Key: []string{"updatedAt"},
+		},
+		mgo.Index{
+			Key: []string{"createdAt"},
+		},
+		mgo.Index{
+			Key: []string{"createdBy"},
+		},
+	}
 )
 
 // define model structs
@@ -23,8 +79,8 @@ type Address struct {
 }
 
 type FoodService struct {
-	Id   bson.ObjectId	 `bson:"_id"`
-	Address    			 `bson:"address"`
+	Id          bson.ObjectId `bson:"_id"`
+	Address     `bson:"address"`
 	Name        string   `bson:"name"`
 	Description string   `bson:"description"`
 	DressCode   string   `bson:"dressCode"`
@@ -57,41 +113,57 @@ type FoodService struct {
 	CreatedBy   string    `bson:"createdBy"`
 	UpdatedBy   string    `bson:"updatedBy"`
 }
-type NearStats struct {
-	NScanned  uint32  `bson:"nscanned"`
-	ObjLoaded uint32  `bson:"objectsLoaded"`
-	AvrDis    float32 `bson:"avgDistance"`
-	MaxDis    float32 `bson:"maxDistance"`
-	time      int32   `bson:"time"`
-}
 
 // struct to store Near FoodServices result from mongo
-type NearFoodService struct {
-	Dis float32     `bson:"dis"`
-	Obj FoodService `bson:"obj"`
+type Near struct {
+	Results []struct {
+		Dis float32
+		Obj FoodService
+	}
+	Stats NearStats
+	Ok    float32
 }
 
-type NearResult struct {
-	Results []NearFoodService
-	Stats   NearStats
-	Ok      float32
+func check(s string, e error) bool {
+	if e != nil {
+		beego.Error(s + e.Error())
+		return true
+	}
+	return false
+}
+
+func (f FoodService) GetC() string {
+	return "foodServices"
+}
+
+func (f FoodService) InitIndex() (bool, error) {
+	var err error
+	sess := Session.Copy()
+	defer sess.Close()
+	for _, v := range indexes {
+		err = sess.DB(Db).C(f.GetC()).EnsureIndex(v)
+		if check("FoodService InitIndex -> ", err) {
+			return false, err
+		}
+	}
+
+	return true, err
 }
 
 func (f FoodService) FindOne(b bson.M) (FoodService, error) {
-	var foodService FoodService
+	var fds FoodService
 	session := Session.Copy()
 	defer session.Close()
 
-	foodServices := session.DB(Db).C("foodServices")
-	err := foodServices.Find(b).One(&foodService)
-	if err != nil {
-		beego.Error(err)
-	}
-	return foodService, err
+	foodServices := session.DB(Db).C(fds.GetC())
+	err := foodServices.Find(b).One(&fds)
+	check("FoodService FindOne -> ", err)
+
+	return fds, err
 }
 
-func (f FoodService) FindNear(min, max int, loc GeoJson) (NearResult, error) {
-	var nfs NearResult
+func (f FoodService) FindNear(min, max int, loc GeoJson) (Near, error) {
+	var nfs Near
 	session := Session.Copy()
 	defer session.Close()
 
@@ -102,9 +174,7 @@ func (f FoodService) FindNear(min, max int, loc GeoJson) (NearResult, error) {
 		{"minDistance", min},
 		{"maxDistance", max},
 	}, &nfs)
-	if err != nil {
-		beego.Error(err)
-	}
+	check("FoodService FindNear -> ", err)
 
 	return nfs, err
 }

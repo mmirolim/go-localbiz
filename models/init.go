@@ -12,6 +12,14 @@ var (
 	Session *mgo.Session
 )
 
+type NearStats struct {
+	NScanned  uint32  `bson:"nscanned"`
+	ObjLoaded uint32  `bson:"objectsLoaded"`
+	AvrDis    float32 `bson:"avgDistance"`
+	MaxDis    float32 `bson:"maxDistance"`
+	time      int32   `bson:"time"`
+}
+
 func InitConnection() {
 	Host = beego.AppConfig.String("db::host")
 	Db = beego.AppConfig.String("db::db")
@@ -21,4 +29,9 @@ func InitConnection() {
 	}
 	// import to pkg scope
 	Session = session
+
+	// init indexes of models
+	var fds FoodService
+	_, _ = fds.InitIndex()
+
 }

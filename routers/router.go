@@ -7,5 +7,5 @@ import (
 
 func init() {
 	beego.Router("/", &controllers.HomeCtrl{})
-	beego.Router("/fs/:slug", &controllers.FoodServiceCtrl{})
+	beego.Router("/" + controllers.FoodServiceCtrl{}.Slug() +"/:slug", &controllers.FoodServiceCtrl{})
 }

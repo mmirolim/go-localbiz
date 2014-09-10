@@ -10,6 +10,10 @@ type FoodServiceCtrl struct {
 	baseController
 }
 
+func (this FoodServiceCtrl) Slug() string {
+	return "fs"
+}
+
 func (this *FoodServiceCtrl) Get() {
 	this.Data["Lang"] = this.Lang
 
@@ -21,9 +25,9 @@ func (this *FoodServiceCtrl) Get() {
 		beego.Error(err)
 		this.Abort("404")
 	}
-	nearResult, err := models.FoodServices.FindNear(1, 1000, foodService.GeoJson)
+	near, err := models.FoodServices.FindNear(1, 1000, foodService.GeoJson)
 	if err == nil {
-		this.Data["NearResult"] = nearResult
+		this.Data["Near"] = near
 	} else {
 		beego.Warn(err)
 	}
@@ -31,5 +35,6 @@ func (this *FoodServiceCtrl) Get() {
 	this.Data["Title"] = "Title - District - City | APPNAME"
 	this.TplNames = "food-service/food-service.tpl"
 	this.Data["Entity"] = foodService
+	this.Data["CtrlSlug"] = this.Slug()
 
 }
