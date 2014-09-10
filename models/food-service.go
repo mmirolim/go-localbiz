@@ -141,7 +141,7 @@ func (f FoodService) InitIndex() (bool, error) {
 	return true, err
 }
 
-func (f FoodService) Find(b bson.D) ([]FoodService, error) {
+func (f FoodService) Find(q bson.D) ([]FoodService, error) {
 	var fds []FoodService
 	session := Session.Copy()
 	defer session.Close()
@@ -149,20 +149,20 @@ func (f FoodService) Find(b bson.D) ([]FoodService, error) {
 	foodServices := session.DB(MongoDbName).C(f.GetC())
 	// limit is important when all used, may consume all memory
 	// @todo maybe memory consumption reduces if not all fields retrieved?
-	iter := foodServices.Find(b).Limit(5000).Iter()
+	iter := foodServices.Find(q).Limit(5000).Iter()
 	err := iter.All(&fds)
 	check("FoodService FindOne -> ", err)
 
 	return fds, err
 }
 
-func (f FoodService) FindOne(b bson.M) (FoodService, error) {
+func (f FoodService) FindOne(q bson.M) (FoodService, error) {
 	var fds FoodService
 	session := Session.Copy()
 	defer session.Close()
 
 	foodServices := session.DB(MongoDbName).C(f.GetC())
-	err := foodServices.Find(b).One(&fds)
+	err := foodServices.Find(q).One(&fds)
 	check("FoodService FindOne -> ", err)
 
 	return fds, err

@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	s "strings"
+
 	"github.com/astaxie/beego"
 	"github.com/mmirolim/yalp-go/models"
 	"gopkg.in/mgo.v2/bson"
@@ -20,7 +22,7 @@ func (this *FoodServiceCtrl) Get() {
 	// get FoodService by slug
 	slug := this.Ctx.Input.Param(":slug")
 
-	foodService, err := models.FoodServices.FindOne(bson.M{"slug": slug})
+	foodService, err := models.FoodServices.FindOne(bson.M{ "slug" : slug })
 	if err != nil {
 		beego.Error(err)
 		this.Abort("404")
@@ -43,11 +45,16 @@ func (this *FoodServiceCtrl) Get() {
 func (this *FoodServiceCtrl) Category() {
 	// get attr, tag and city
 	attr := this.Ctx.Input.Param(":attr")
-	tag := this.Ctx.Input.Param(":tag")
+	tag := s.Replace(this.Ctx.Input.Param(":tag"), "_", " ", -1)
 	city := this.Ctx.Input.Param(":city")
 
+	q := bson.D{
+		{ "lang", this.Lang },
+		{ attr , bson.M{"$regex" : bson.RegEx{`^` + tag, "i"}}},
+		{ "address.city", bson.M{"$regex" : bson.RegEx{ `^` + city, "i"}}},
+	}
 	// get all places with cat and city
-	fds, err := models.FoodServices.Find(bson.D{ { "lang", this.Lang }, {attr , tag} , { "address.city", city} })
+	fds, err := models.FoodServices.Find(q)
 	check("FSCtrl.Category -> ", err)
 	count := len(fds)
 	this.TplNames = "food-service/category.tpl"

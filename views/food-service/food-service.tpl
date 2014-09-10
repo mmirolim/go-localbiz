@@ -34,7 +34,7 @@
 <h4 class="color-gray">[[i18n .Lang "good-for" ]]</h4>
 <ul>
     [[ range $key, $val := .Entity.GoodFor ]]
-    <li><a href="[[getUrl $city $ctrlSlug "goodFor" $val]]">[[ $val ]]</a></li>
+    <li><a href="[[getUrl $city $ctrlSlug "good_for" $val]]">[[ $val ]]</a></li>
     [[ end ]]
 </ul>
 

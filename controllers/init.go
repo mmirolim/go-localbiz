@@ -39,7 +39,7 @@ func GetUrl(ss ...string) string {
 	// ex /city/fs/one
 	str := []string{""}
 	for _, v := range ss {
-		str = append(str, v)
+		str = append(str, s.Replace(v, " ", "_", -1))
 	}
 	u = s.ToLower(s.Join(str, "/"))
 	return u
