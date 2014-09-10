@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"strings"
+	s "strings"
 
 	"github.com/astaxie/beego"
 	"github.com/beego/i18n"
@@ -33,12 +33,16 @@ func check(s string, e error) bool {
 	return false
 }
 
-func GetUrl(s ...string) string {
-	var url string
-	for _, v := range s {
-		url += "/" + v
+func GetUrl(ss ...string) string {
+	var u string
+	// need empty first element to append first word with slash
+	// ex /city/fs/one
+	str := []string{""}
+	for _, v := range ss {
+		str = append(str, v)
 	}
-	return url
+	u = s.ToLower(s.Join(str, "/"))
+	return u
 }
 
 // implement Prepare method for base router
@@ -61,8 +65,8 @@ func (this *baseController) Prepare() {
 
 func initLocales() {
 	// Init lang list
-	langs := strings.Split(beego.AppConfig.String("lang::types"), "|")
-	names := strings.Split(beego.AppConfig.String("lang::names"), "|")
+	langs := s.Split(beego.AppConfig.String("lang::types"), "|")
+	names := s.Split(beego.AppConfig.String("lang::names"), "|")
 	langTypes = make([]*langType, 0, len(langs))
 
 	for i, v := range langs {
