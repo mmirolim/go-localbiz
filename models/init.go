@@ -7,8 +7,8 @@ import (
 
 // connection
 var (
-	Host    string
-	Db      string
+	MongoHost    string
+	MongoDbName  string
 	Session *mgo.Session
 )
 
@@ -29,9 +29,9 @@ func check(s string, e error) bool {
 }
 
 func InitConnection() {
-	Host = beego.AppConfig.String("db::host")
-	Db = beego.AppConfig.String("db::db")
-	session, err := mgo.Dial(Host)
+	MongoHost = beego.AppConfig.String("db::mongohost")
+	MongoDbName = beego.AppConfig.String("db::mongodbname")
+	session, err := mgo.Dial(MongoHost)
 	if err != nil {
 		beego.Error("Could not connect to mongo instance", err)
 	}

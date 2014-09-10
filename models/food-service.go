@@ -30,7 +30,7 @@ var (
 			Key: []string{"price", "name"},
 		},
 		mgo.Index{
-			Key: []string{"goodFor", "name"},
+			Key: []string{"good_for", "name"},
 		},
 		mgo.Index{
 			Key: []string{"music", "name"},
@@ -51,16 +51,16 @@ var (
 			Key: []string{"deleted"},
 		},
 		mgo.Index{
-			Key: []string{"updatedBy"},
+			Key: []string{"updated_by"},
 		},
 		mgo.Index{
-			Key: []string{"updatedAt"},
+			Key: []string{"updated_at"},
 		},
 		mgo.Index{
-			Key: []string{"createdAt"},
+			Key: []string{"created_at"},
 		},
 		mgo.Index{
-			Key: []string{"createdBy"},
+			Key: []string{"created_by"},
 		},
 	}
 )
@@ -81,12 +81,12 @@ type FoodService struct {
 	Id          bson.ObjectId `bson:"_id"`
 	Address     `bson:"address"`
 	Name        string   `bson:"name"`
-	Description string   `bson:"description"`
-	DressCode   string   `bson:"dressCode"`
+	Desc		string   `bson:"desc"`
+	DressCode   string   `bson:"dress_code"`
 	Fax         string   `bson:"fax"`
 	Email       string   `bson:"email"`
-	OrderPhone  string   `bson:"orderPhone"`
-	WorkHours   string   `bson:"workHours"`
+	OrderPhone  string   `bson:"order_phone"`
+	WorkHours   string   `bson:"work_hours"`
 	Halls       string   `bson:"halls"`
 	Company     string   `bson:"company"`
 	Cabins      string   `bson:"cabins"`
@@ -101,16 +101,16 @@ type FoodService struct {
 	Terminal    string   `bson:"terminal"`
 	Types       []string `bson:"types"`
 	Transport   string   `bson:"trasport"`
-	GoodFor     []string `bson:"goodFor"`
+	GoodFor     []string `bson:"good_for"`
 	Price       string   `bson:"price"`
 	Lang        string   `bson:"lang"`
 	GeoJson     `bson:"loc,omitempty"`
 	Slug        string    `bson:"slug"`
 	Deleted     bool      `bson:"deleted"`
-	UpdatedAt   time.Time `bson:"updatedAt"`
-	CreatedAt   time.Time `bson:"createdAt"`
-	CreatedBy   string    `bson:"createdBy"`
-	UpdatedBy   string    `bson:"updatedBy"`
+	UpdatedAt   time.Time `bson:"updated_at"`
+	CreatedAt   time.Time `bson:"created_at"`
+	CreatedBy   string    `bson:"created_by"`
+	UpdatedBy   string    `bson:"updated_by"`
 }
 
 // struct to store Near FoodServices result from mongo
@@ -124,7 +124,7 @@ type Near struct {
 }
 
 func (f FoodService) GetC() string {
-	return "foodServices"
+	return "food_services"
 }
 
 func (f FoodService) InitIndex() (bool, error) {
@@ -132,7 +132,7 @@ func (f FoodService) InitIndex() (bool, error) {
 	sess := Session.Copy()
 	defer sess.Close()
 	for _, v := range indexes {
-		err = sess.DB(Db).C(f.GetC()).EnsureIndex(v)
+		err = sess.DB(MongoDbName).C(f.GetC()).EnsureIndex(v)
 		if check("FoodService InitIndex -> ", err) {
 			return false, err
 		}
@@ -146,7 +146,7 @@ func (f FoodService) Find(b bson.D) ([]FoodService, error) {
 	session := Session.Copy()
 	defer session.Close()
 
-	foodServices := session.DB(Db).C(f.GetC())
+	foodServices := session.DB(MongoDbName).C(f.GetC())
 	// limit is important when all used, may consume all memory
 	// @todo maybe memory consumption reduces if not all fields retrieved?
 	iter := foodServices.Find(b).Limit(5000).Iter()
@@ -161,20 +161,21 @@ func (f FoodService) FindOne(b bson.M) (FoodService, error) {
 	session := Session.Copy()
 	defer session.Close()
 
-	foodServices := session.DB(Db).C(f.GetC())
+	foodServices := session.DB(MongoDbName).C(f.GetC())
 	err := foodServices.Find(b).One(&fds)
 	check("FoodService FindOne -> ", err)
 
 	return fds, err
 }
 
+// @todo refactor maybe loc.coor should be passed by f?
 func (f FoodService) FindNear(min, max int, loc GeoJson) (Near, error) {
 	var nfs Near
 	session := Session.Copy()
 	defer session.Close()
 
-	err := session.DB(Db).Run(bson.D{
-		{"geoNear", "foodServices"},
+	err := session.DB(MongoDbName).Run(bson.D{
+		{"geoNear", f.GetC()},
 		{"near", bson.D{{"type", "Point"}, {"coordinates", loc.Coordinates}}},
 		{"spherical", true},
 		{"minDistance", min},

@@ -9,7 +9,7 @@
     <li class="tags label"><a href="[[getUrl $city $ctrlSlug "types" $val]]">[[ $val ]]</a></li>
     [[ end ]]
 </ul>
-[[ .Entity.Description | str2html ]]
+[[ .Entity.Desc | str2html ]]
 
 <h4 class="color-gray">[[i18n .Lang "address" ]]</h4>
 <address>
