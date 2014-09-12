@@ -20,11 +20,11 @@ var (
 			Key: []string{"slug"},
 		},
 		mgo.Index{
-			Key: []string{"slug", "lang"},
+			Key:    []string{"slug", "lang"},
 			Unique: true,
 		},
 		mgo.Index{
-			Key:  []string{"$2dsphere:loc"},
+			Key: []string{"$2dsphere:loc"},
 		},
 		mgo.Index{
 			Key: []string{"price", "name"},
@@ -75,42 +75,42 @@ type Address struct {
 	City     string `bson:"city"`
 	District string `bson:"district"`
 	Street   string `bson:"street"`
+	RefLoc   string `bson:"ref_loc"`
 }
 
 type FoodService struct {
-	Id          bson.ObjectId `bson:"_id"`
-	Address     `bson:"address"`
-	Name        string   `bson:"name"`
-	Desc		string   `bson:"desc"`
-	DressCode   string   `bson:"dress_code"`
-	Fax         string   `bson:"fax"`
-	Email       string   `bson:"email"`
-	OrderPhone  string   `bson:"order_phone"`
-	WorkHours   string   `bson:"work_hours"`
-	Halls       string   `bson:"halls"`
-	Company     string   `bson:"company"`
-	Cabins      string   `bson:"cabins"`
-	Cuisines    []string `bson:"cuisines"`
-	Sits        int16    `bson:"sits"`
-	Music       []string `bson:"music"`
-	RefLoc      string   `bson:"refLoc"`
-	Features    []string `bson:"features"`
-	Parking     string   `bson:"parking"`
-	Site        string   `bson:"site"`
-	Phones      []string `bson:"tels"`
-	Terminal    string   `bson:"terminal"`
-	Types       []string `bson:"types"`
-	Transport   string   `bson:"trasport"`
-	GoodFor     []string `bson:"good_for"`
-	Price       string   `bson:"price"`
-	Lang        string   `bson:"lang"`
-	GeoJson     `bson:"loc,omitempty"`
-	Slug        string    `bson:"slug"`
-	Deleted     bool      `bson:"deleted"`
-	UpdatedAt   time.Time `bson:"updated_at"`
-	CreatedAt   time.Time `bson:"created_at"`
-	CreatedBy   string    `bson:"created_by"`
-	UpdatedBy   string    `bson:"updated_by"`
+	Id         bson.ObjectId `bson:"_id"`
+	Address    `bson:"address"`
+	Name       string   `bson:"name"`
+	Desc       string   `bson:"desc"`
+	DressCode  string   `bson:"dress_code"`
+	Fax        string   `bson:"fax"`
+	Email      string   `bson:"email"`
+	OrderPhone string   `bson:"order_phone"`
+	WorkHours  string   `bson:"work_hours"`
+	Halls      string   `bson:"halls"`
+	Company    string   `bson:"company"`
+	Cabins     string   `bson:"cabins"`
+	Cuisines   []string `bson:"cuisines"`
+	Sits       int16    `bson:"sits"`
+	Music      []string `bson:"music"`
+	Features   []string `bson:"features"`
+	Parking    string   `bson:"parking"`
+	Site       string   `bson:"site"`
+	Phones     []string `bson:"tels"`
+	Terminal   string   `bson:"terminal"`
+	Types      []string `bson:"types"`
+	Transport  string   `bson:"trasport"`
+	GoodFor    []string `bson:"good_for"`
+	Price      string   `bson:"price"`
+	Lang       string   `bson:"lang"`
+	GeoJson    `bson:"loc,omitempty"`
+	Slug       string    `bson:"slug"`
+	Deleted    bool      `bson:"deleted"`
+	UpdatedAt  time.Time `bson:"updated_at"`
+	CreatedAt  time.Time `bson:"created_at"`
+	CreatedBy  string    `bson:"created_by"`
+	UpdatedBy  string    `bson:"updated_by"`
 }
 
 // struct to store Near FoodServices result from mongo

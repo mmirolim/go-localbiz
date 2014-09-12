@@ -5,6 +5,7 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/beego/i18n"
+	"strings"
 )
 
 var (
@@ -91,7 +92,7 @@ func (this *baseController) setLangVer() {
 
 	// Get language info from 'Accept-Language'
 	if len(lang) == 0 {
-		al := this.Ctx.Request.Header.Get("Accept-Language")
+		al := strings.ToLower(this.Ctx.Request.Header.Get("Accept-Language"))
 		if len(al) > 4 {
 			al = al[:5] // only compare first 5 letters
 			if i18n.IsExist(al) {
@@ -102,7 +103,7 @@ func (this *baseController) setLangVer() {
 
 	// Set default lang
 	if len(lang) == 0 || !i18n.IsExist(lang) {
-		lang = "ru-RU"
+		lang = "ru-ru"
 	}
 
 	currentLang := langType{

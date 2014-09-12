@@ -13,7 +13,7 @@
 
 <h4 class="color-gray">[[i18n .Lang "address" ]]</h4>
 <address>
-    <span class="refloc">[[ .Entity.RefLoc ]]</span>
+    <span class="refloc">[[ .Entity.Address.RefLoc ]]</span>
     <span class="transport">[[ .Entity.Transport ]]</span>
     <span class="street">[[ .Entity.Address.Street ]]</span>
     <span class="district">[[ .Entity.Address.District ]]</span>

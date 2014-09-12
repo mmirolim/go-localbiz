@@ -22,7 +22,7 @@ func (this *FoodServiceCtrl) Get() {
 	// get FoodService by slug
 	slug := this.Ctx.Input.Param(":slug")
 
-	foodService, err := models.FoodServices.FindOne(bson.M{ "slug" : slug })
+	foodService, err := models.FoodServices.FindOne(bson.M{"slug": slug})
 	if err != nil {
 		beego.Error(err)
 		this.Abort("404")
@@ -48,10 +48,11 @@ func (this *FoodServiceCtrl) Category() {
 	tag := s.Replace(this.Ctx.Input.Param(":tag"), "_", " ", -1)
 	city := this.Ctx.Input.Param(":city")
 
+	// $regex query used to match case sensitive index
 	q := bson.D{
-		{ "lang", this.Lang },
-		{ attr , bson.M{"$regex" : bson.RegEx{`^` + tag, "i"}}},
-		{ "address.city", bson.M{"$regex" : bson.RegEx{ `^` + city, "i"}}},
+		{"lang", this.Lang},
+		{attr, bson.M{"$regex": bson.RegEx{`^` + tag, "i"}}},
+		{"address.city", bson.M{"$regex": bson.RegEx{`^` + city, "i"}}},
 	}
 	// get all places with cat and city
 	fds, err := models.FoodServices.Find(q)
@@ -61,15 +62,14 @@ func (this *FoodServiceCtrl) Category() {
 
 	this.Data["Data"] = struct {
 		Category string
-		City	string
-		FdsList []models.FoodService
-		Count int
+		City     string
+		FdsList  []models.FoodService
+		Count    int
 	}{
 		tag,
 		city,
 		fds,
 		count,
 	}
-
 
 }

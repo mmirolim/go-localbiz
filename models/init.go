@@ -7,9 +7,9 @@ import (
 
 // connection
 var (
-	MongoHost    string
-	MongoDbName  string
-	Session *mgo.Session
+	MongoHost   string
+	MongoDbName string
+	Session     *mgo.Session
 )
 
 type NearStats struct {
