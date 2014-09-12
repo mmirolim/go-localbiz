@@ -1,12 +1,14 @@
-package controllers
+package ctrl
 
-import ()
+import (
+//"github.com/astaxie/beego"
+)
 
-type HomeCtrl struct {
+type Home struct {
 	baseController
 }
 
-func (this *HomeCtrl) Get() {
+func (this *Home) Get() {
 	this.Data["Lang"] = this.Lang
 	this.Data["Title"] = "Yalp.uz"
 	this.Data["Name"] = "My name is Mirolim!"

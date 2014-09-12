@@ -129,7 +129,7 @@ func (f FoodService) GetC() string {
 
 func (f FoodService) InitIndex() (bool, error) {
 	var err error
-	sess := Session.Copy()
+	sess := MgoSession.Copy()
 	defer sess.Close()
 	for _, v := range indexes {
 		err = sess.DB(MongoDbName).C(f.GetC()).EnsureIndex(v)
@@ -143,7 +143,7 @@ func (f FoodService) InitIndex() (bool, error) {
 
 func (f FoodService) Find(q bson.D) ([]FoodService, error) {
 	var fds []FoodService
-	session := Session.Copy()
+	session := MgoSession.Copy()
 	defer session.Close()
 
 	foodServices := session.DB(MongoDbName).C(f.GetC())
@@ -158,7 +158,7 @@ func (f FoodService) Find(q bson.D) ([]FoodService, error) {
 
 func (f FoodService) FindOne(q bson.M) (FoodService, error) {
 	var fds FoodService
-	session := Session.Copy()
+	session := MgoSession.Copy()
 	defer session.Close()
 
 	foodServices := session.DB(MongoDbName).C(f.GetC())
@@ -171,7 +171,7 @@ func (f FoodService) FindOne(q bson.M) (FoodService, error) {
 // @todo refactor maybe loc.coor should be passed by f?
 func (f FoodService) FindNear(min, max int, loc GeoJson) (Near, error) {
 	var nfs Near
-	session := Session.Copy()
+	session := MgoSession.Copy()
 	defer session.Close()
 
 	err := session.DB(MongoDbName).Run(bson.D{

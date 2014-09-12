@@ -1,4 +1,4 @@
-package controllers
+package ctrl
 
 import (
 	s "strings"
@@ -8,15 +8,15 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-type FoodServiceCtrl struct {
+type FoodService struct {
 	baseController
 }
 
-func (this FoodServiceCtrl) Slug() string {
+func (this FoodService) Slug() string {
 	return "fs"
 }
 
-func (this *FoodServiceCtrl) Get() {
+func (this *FoodService) Get() {
 	this.Data["Lang"] = this.Lang
 
 	// get FoodService by slug
@@ -42,7 +42,7 @@ func (this *FoodServiceCtrl) Get() {
 }
 
 // method to process fs category requests
-func (this *FoodServiceCtrl) Category() {
+func (this *FoodService) Category() {
 	// get attr, tag and city
 	attr := this.Ctx.Input.Param(":attr")
 	tag := s.Replace(this.Ctx.Input.Param(":tag"), "_", " ", -1)

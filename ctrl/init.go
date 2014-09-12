@@ -1,11 +1,10 @@
-package controllers
+package ctrl
 
 import (
 	s "strings"
 
 	"github.com/astaxie/beego"
 	"github.com/beego/i18n"
-	"strings"
 )
 
 var (
@@ -48,6 +47,10 @@ func GetUrl(ss ...string) string {
 
 // implement Prepare method for base router
 func (this *baseController) Prepare() {
+
+	//	sess := GSession.SessionStart()
+	//	defer sess.SessionRelease()
+
 	// Setting properties
 	this.Data["AppVer"] = AppVer
 	this.Data["IsPro"] = IsPro
@@ -92,7 +95,7 @@ func (this *baseController) setLangVer() {
 
 	// Get language info from 'Accept-Language'
 	if len(lang) == 0 {
-		al := strings.ToLower(this.Ctx.Request.Header.Get("Accept-Language"))
+		al := s.ToLower(this.Ctx.Request.Header.Get("Accept-Language"))
 		if len(al) > 4 {
 			al = al[:5] // only compare first 5 letters
 			if i18n.IsExist(al) {
@@ -131,4 +134,5 @@ func InitApp() {
 	initLocales()
 	// register getUrl func
 	beego.AddFuncMap("getUrl", GetUrl)
+
 }

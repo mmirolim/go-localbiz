@@ -9,7 +9,7 @@ import (
 var (
 	MongoHost   string
 	MongoDbName string
-	Session     *mgo.Session
+	MgoSession  *mgo.Session
 )
 
 type NearStats struct {
@@ -36,7 +36,7 @@ func InitConnection() {
 		beego.Error("Could not connect to mongo instance", err)
 	}
 	// import to pkg scope
-	Session = session
+	MgoSession = session
 
 	// init indexes of models
 	var fds FoodService

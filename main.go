@@ -3,22 +3,23 @@ package main
 import (
 	"github.com/astaxie/beego"
 	"github.com/beego/i18n"
-	"github.com/mmirolim/yalp-go/controllers"
+	"github.com/mmirolim/yalp-go/ctrl"
 	"github.com/mmirolim/yalp-go/models"
 	_ "github.com/mmirolim/yalp-go/routers"
 )
 
 func initialize() {
-	// set constants for controllers
-	controllers.AppVer = beego.AppConfig.String("appver")
-	controllers.APP = beego.AppConfig.String("appname")
-	controllers.IsPro = beego.RunMode == "prod"
+	// set constants for ctrl
+	ctrl.AppVer = beego.AppConfig.String("appver")
+	ctrl.APP = beego.AppConfig.String("appname")
+	ctrl.IsPro = beego.RunMode == "prod"
 
-	// init controllers
-	controllers.InitApp()
+	// init ctrl
+	ctrl.InitApp()
 	// init connection to mongodb
 	models.InitConnection()
 }
+
 func main() {
 	initialize()
 
