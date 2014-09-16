@@ -1,7 +1,6 @@
 package ctrls
 
 import (
-//"github.com/astaxie/beego"
 )
 
 type Home struct {
@@ -12,8 +11,14 @@ func (this *Home) Get() {
 	this.Data["Lang"] = this.Lang
 	this.Data["Title"] = "Yalp.uz"
 	this.Data["Name"] = "My name is Mirolim!"
-	this.Data["Num"] = 10
-	this.SetSession("num", 12)
+	v := this.GetSession("number")
+	if v == nil {
+		this.SetSession("number", int(1))
+		this.Data["Num"] = 0
+	} else {
+		this.SetSession("number", v.(int)+1)
+		this.Data["Num"] = v.(int)
+	}
 	this.TplNames = "index.tpl"
 
 }

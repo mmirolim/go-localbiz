@@ -2,14 +2,14 @@ package routers
 
 import (
 	"github.com/astaxie/beego"
-	"github.com/mmirolim/yalp-go/ctrl"
+	"github.com/mmirolim/yalp-go/ctrls"
 )
 
 func init() {
-	beego.Router("/:city/"+ctrl.FoodService{}.Slug()+"/:attr?/:tag", &ctrl.FoodService{}, "get:Category")
-	beego.Router("/"+ctrl.FoodService{}.Slug()+"/:slug", &ctrl.FoodService{})
-	beego.Router("/login", &ctrl.Auth{})
-	beego.Router("/signup", &ctrl.User{}, "*:SignUp")
-	beego.Router("/", &ctrl.Home{})
+	beego.Router("/:city/"+ctrls.FoodService{}.Slug()+"/:attr?/:tag", &ctrls.FoodService{}, "get:Category")
+	beego.Router("/"+ctrls.FoodService{}.Slug()+"/:slug", &ctrls.FoodService{})
+	beego.Router("/login", &ctrls.Auth{})
+	beego.Router("/signup", &ctrls.User{}, "*:SignUp")
+	beego.Router("/", &ctrls.Home{})
 
 }

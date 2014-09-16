@@ -3,7 +3,7 @@ package ctrls
 import (
 	s "strings"
 
-	"github.com/mmirolim/beego"
+	"github.com/astaxie/beego"
 	"github.com/beego/i18n"
 )
 

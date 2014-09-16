@@ -3,19 +3,20 @@ package main
 import (
 	"github.com/astaxie/beego"
 	"github.com/beego/i18n"
-	"github.com/mmirolim/yalp-go/ctrl"
+	"github.com/mmirolim/yalp-go/ctrls"
 	"github.com/mmirolim/yalp-go/models"
 	_ "github.com/mmirolim/yalp-go/routers"
+	_ "github.com/astaxie/beego/session/redis"
 )
 
 func initialize() {
 	// set constants for ctrl
-	ctrl.AppVer = beego.AppConfig.String("appver")
-	ctrl.APP = beego.AppConfig.String("appname")
-	ctrl.IsPro = beego.RunMode == "prod"
+	ctrls.AppVer = beego.AppConfig.String("appver")
+	ctrls.APP = beego.AppConfig.String("appname")
+	ctrls.IsPro = beego.RunMode == "prod"
 
 	// init ctrl
-	ctrl.InitApp()
+	ctrls.InitApp()
 	// init connection to mongodb
 	models.InitConnection()
 }
@@ -34,6 +35,8 @@ func main() {
 
 	// register a i18n template func
 	beego.AddFuncMap("i18n", i18n.Tr)
+	beego.AddFuncMap("getUrl", ctrls.GetUrl)
 
 	beego.Run()
+
 }
