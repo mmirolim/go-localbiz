@@ -25,20 +25,20 @@
     <li><a href="[[getUrl $city $ctrlSlug "cuisines" $val]]">[[ $val ]]</a></li>
     [[ end ]]
 </ul>
-<h4 class="color-gray">[[T "features" ]]</h4>
+<h4 class="color-gray">[[T "feature" ]]</h4>
 <ul>
     [[ range $key, $val := .Entity.Features ]]
     <li><a href="[[getUrl $city $ctrlSlug "features" $val]]">[[ $val ]]</a></li>
     [[ end ]]
 </ul>
-<h4 class="color-gray">[[T "good-for" ]]</h4>
+<h4 class="color-gray">[[T "good_for" ]]</h4>
 <ul>
     [[ range $key, $val := .Entity.GoodFor ]]
     <li><a href="[[getUrl $city $ctrlSlug "good_for" $val]]">[[ $val ]]</a></li>
     [[ end ]]
 </ul>
 
-<h4 class="color-gray">[[T "around-1km" ]]</h4>
+<h4 class="color-gray">[[T "in_m_km_radius" ]]</h4>
 <ul>
     [[ range $key, $val := .Near.Results ]]
     <li><a href="/[[ $ctrlSlug ]]/[[ $val.Obj.Slug ]]">[[ $val.Obj.Name ]]</a> - [[ $val.Dis ]] m</li>

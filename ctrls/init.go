@@ -55,6 +55,10 @@ func (this *baseController) Prepare() {
 	this.LayoutSections["Header"] = "header.tpl"
 	this.LayoutSections["Footer"] = "footer.tpl"
 
+	// @todo  comment on production
+	if IsPro == false {
+		initLocales()
+	}
 	// set language
 	this.setLangVer()
 
@@ -65,12 +69,11 @@ func initLocales() {
 	langs := s.Split(beego.AppConfig.String("lang::types"), "|")
 	names := s.Split(beego.AppConfig.String("lang::names"), "|")
 	defaultLang = beego.AppConfig.String("lang::default")
+
 	langTypes = make(map[string]string)
 	for i, v := range langs {
-		beego.Warn(v)
 		langTypes[v] = names[i]
 	}
-	beego.Warn(langTypes)
 
 	i18n.MustLoadTranslationFile("./conf/en-us.all.json")
 	i18n.MustLoadTranslationFile("./conf/ru-ru.all.json")
@@ -88,7 +91,7 @@ func (this *baseController) setLangVer() {
 
 	T, err := i18n.Tfunc(urlLang, acceptLang, defaultLang)
 	check("initLocales i18n.Tfunc ", err)
-	// register translation func
+	// register translation func with langs
 	beego.AddFuncMap("T", T)
 
 	if langTypes[urlLang] != "" {
@@ -110,5 +113,4 @@ func InitApp() {
 	initLocales()
 	// register getUrl func
 	beego.AddFuncMap("getUrl", GetUrl)
-
 }

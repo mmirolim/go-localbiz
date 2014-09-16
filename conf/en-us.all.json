@@ -5,13 +5,16 @@
     },
     {
         "id": "cuisine",
-        "translation": ""
+        "translation": {
+            "one": "cuisine",
+            "other": "cuisines"
+        }
     },
     {
         "id": "greeting",
         "translation": {
-            "one": "Greetings {{ .Person }}",
-            "other": "Greetings my friends"
+            "one": "Greetings {{ .Person }}!",
+            "other": "Greetings my friends!"
         }
     }
 ]

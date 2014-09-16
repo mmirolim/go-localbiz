@@ -28,6 +28,7 @@ func main() {
 		beego.EnableAdmin = true
 		beego.AdminHttpAddr = "192.168.1.107"
 		beego.AdminHttpPort = 8088
+		ctrls.IsPro = false
 	}
 	// change default tpl tags
 	beego.TemplateLeft = "[["

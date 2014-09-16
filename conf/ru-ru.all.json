@@ -5,13 +5,16 @@
     },
     {
         "id": "cuisine",
-        "translation": "кухня"
+        "translation": {
+            "one": "кухня",
+            "few": "кухни"
+        }
     },
     {
         "id": "greeting",
         "translation": {
-            "one": "Добро пожаловать {{ .Person }}",
-            "other": "Всем привет"
+            "one": "Добро пожаловать {{ .Person }}!",
+            "few": "Всем привет"
         }
     }
 ]
