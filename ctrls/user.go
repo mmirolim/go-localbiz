@@ -1,4 +1,4 @@
-package ctrl
+package ctrls
 
 type User struct {
 	baseController
