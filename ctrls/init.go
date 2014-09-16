@@ -4,25 +4,21 @@ import (
 	s "strings"
 
 	"github.com/astaxie/beego"
-	"github.com/beego/i18n"
+	"github.com/nicksnyder/go-i18n/i18n"
 )
 
 var (
 	APP       string
 	AppVer    string
 	IsPro     bool
-	langTypes []*langType
+	langTypes map[string]string
+	defaultLang string
 )
-
-// languages struct
-type langType struct {
-	Lang, Name string
-}
 
 // base router with global settings for all other routers
 type baseController struct {
 	beego.Controller
-	i18n.Locale
+	Lang string
 }
 
 func check(s string, e error) bool {
@@ -48,9 +44,6 @@ func GetUrl(ss ...string) string {
 // implement Prepare method for base router
 func (this *baseController) Prepare() {
 
-	//	sess := GSession.SessionStart()
-	//	defer sess.SessionRelease()
-
 	// Setting properties
 	this.Data["AppVer"] = AppVer
 	this.Data["IsPro"] = IsPro
@@ -71,62 +64,45 @@ func initLocales() {
 	// Init lang list
 	langs := s.Split(beego.AppConfig.String("lang::types"), "|")
 	names := s.Split(beego.AppConfig.String("lang::names"), "|")
-	langTypes = make([]*langType, 0, len(langs))
-
+	defaultLang = beego.AppConfig.String("lang::default")
+	langTypes = make(map[string]string)
 	for i, v := range langs {
-		langTypes = append(langTypes, &langType{Lang: v, Name: names[i]})
+		beego.Warn(v)
+		langTypes[v] = names[i]
 	}
+	beego.Warn(langTypes)
 
-	for _, lang := range langs {
-		beego.Trace("Loading language" + lang)
-		if err := i18n.SetMessage(lang, "conf/locale_"+lang+".ini"); err != nil {
-			beego.Error("Fail to set message file: " + err.Error())
-			return
-		}
-	}
+	i18n.MustLoadTranslationFile("./conf/en-us.all.json")
+	i18n.MustLoadTranslationFile("./conf/ru-ru.all.json")
 
 }
 
 // set lang to use
 func (this *baseController) setLangVer() {
-
+	var lang string
 	// Check URL arguments.
-	lang := this.Input().Get("lang")
+	urlLang := this.Input().Get("lang")
 
 	// Get language info from 'Accept-Language'
-	if len(lang) == 0 {
-		al := s.ToLower(this.Ctx.Request.Header.Get("Accept-Language"))
-		if len(al) > 4 {
-			al = al[:5] // only compare first 5 letters
-			if i18n.IsExist(al) {
-				lang = al
-			}
-		}
-	}
+	acceptLang := s.ToLower(this.Ctx.Request.Header.Get("Accept-Language"))
 
-	// Set default lang
-	if len(lang) == 0 || !i18n.IsExist(lang) {
-		lang = "ru-ru"
-	}
+	T, err := i18n.Tfunc(urlLang, acceptLang, defaultLang)
+	check("initLocales i18n.Tfunc ", err)
+	// register translation func
+	beego.AddFuncMap("T", T)
 
-	currentLang := langType{
-		Lang: lang,
-	}
-
-	restLangs := make([]*langType, 0, len(langTypes)-1)
-	for _, v := range langTypes {
-		if lang != v.Lang {
-			restLangs = append(restLangs, v)
-		} else {
-			currentLang.Name = v.Name
-		}
+	if langTypes[urlLang] != "" {
+		lang = urlLang
+	} else if langTypes[acceptLang] != "" {
+		lang = acceptLang
+	} else {
+		lang = defaultLang
 	}
 
 	// Set lang properties
 	this.Lang = lang
-	this.Data["Lang"] = currentLang.Lang
-	this.Data["CurrentLang"] = currentLang.Name
-	this.Data["ResLangs"] = restLangs
+	this.Data["Lang"] = lang
+	this.Data["CurrentLang"] = langTypes[lang]
 
 }
 

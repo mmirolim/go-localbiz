@@ -2,11 +2,11 @@ package main
 
 import (
 	"github.com/astaxie/beego"
-	"github.com/beego/i18n"
 	"github.com/mmirolim/yalp-go/ctrls"
 	"github.com/mmirolim/yalp-go/models"
 	_ "github.com/mmirolim/yalp-go/routers"
 	_ "github.com/astaxie/beego/session/redis"
+	"github.com/nicksnyder/go-i18n/i18n"
 )
 
 func initialize() {
@@ -33,9 +33,8 @@ func main() {
 	beego.TemplateLeft = "[["
 	beego.TemplateRight = "]]"
 
-	// register a i18n template func
-	beego.AddFuncMap("i18n", i18n.Tr)
-	beego.AddFuncMap("getUrl", ctrls.GetUrl)
+	// register i18n T func
+	beego.AddFuncMap("T", i18n.IdentityTfunc)
 
 	beego.Run()
 

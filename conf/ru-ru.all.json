@@ -1,0 +1,17 @@
+[
+    {
+        "id": "hi",
+        "translation": "привет"
+    },
+    {
+        "id": "cuisine",
+        "translation": "кухня"
+    },
+    {
+        "id": "greeting",
+        "translation": {
+            "one": "Добро пожаловать {{ .Person }}",
+            "other": "Всем привет"
+        }
+    }
+]
