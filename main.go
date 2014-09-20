@@ -2,10 +2,10 @@ package main
 
 import (
 	"github.com/astaxie/beego"
+	_ "github.com/astaxie/beego/session/redis"
 	"github.com/mmirolim/yalp-go/ctrls"
 	"github.com/mmirolim/yalp-go/models"
 	_ "github.com/mmirolim/yalp-go/routers"
-	_ "github.com/astaxie/beego/session/redis"
 	"github.com/nicksnyder/go-i18n/i18n"
 )
 

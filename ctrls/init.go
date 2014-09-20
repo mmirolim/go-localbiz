@@ -1,18 +1,25 @@
 package ctrls
 
 import (
+	"bytes"
+	"encoding/gob"
 	s "strings"
 
 	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/cache"
+	_ "github.com/mmirolim/beego/cache/redis"
 	"github.com/nicksnyder/go-i18n/i18n"
 )
 
 var (
-	APP       string
-	AppVer    string
-	IsPro     bool
-	langTypes map[string]string
-	defaultLang string
+	APP             string
+	AppVer          string
+	IsPro           bool
+	langTypes       map[string]string
+	defaultLang     string
+	cacheEnabled, _ = beego.AppConfig.Bool("cache::enabled")
+	Cache, errCache = cache.NewCache("redis", `{"conn":":6379"}`)
+	cachePrefix     = beego.AppConfig.String("cache::prefix") + "ctrls:"
 )
 
 // base router with global settings for all other routers
@@ -110,7 +117,36 @@ func (this *baseController) setLangVer() {
 }
 
 func InitApp() {
+	// check redis cache
+	if errCache != nil {
+		panic(errCache)
+	}
 	initLocales()
 	// register getUrl func
 	beego.AddFuncMap("getUrl", GetUrl)
+
+}
+
+func cacheIsExist(key string) bool {
+	fullKey := cachePrefix + key
+	return Cache.IsExist(fullKey)
+}
+
+func cachePut(key string, val interface{}, timeout int64) error {
+	// serialize only structs and bytes
+	// string, int, int64, float64, bool and nil will be handled by redigo
+	// prepare bytes buffer
+	bCache := new(bytes.Buffer)
+	encCache := gob.NewEncoder(bCache)
+	err := encCache.Encode(val)
+	fullKey := cachePrefix + key
+	Cache.Put(fullKey, bCache, timeout)
+	return err
+}
+
+func cacheGet(key string, data interface{}) error {
+	fullKey := cachePrefix + key
+	decCache := gob.NewDecoder(bytes.NewBuffer(Cache.Get(fullKey).([]byte)))
+	err := decCache.Decode(data)
+	return err
 }

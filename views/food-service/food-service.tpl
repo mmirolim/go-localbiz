@@ -40,7 +40,7 @@
 
 <h4 class="color-gray">[[T "in_m_km_radius" ]]</h4>
 <ul>
-    [[ range $key, $val := .Near.Results ]]
+    [[ range $key, $val := .Near ]]
     <li><a href="/[[ $ctrlSlug ]]/[[ $val.Obj.Slug ]]">[[ $val.Obj.Name ]]</a> - [[ $val.Dis ]] m</li>
     [[ end ]]
 </ul>
