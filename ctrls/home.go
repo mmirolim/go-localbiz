@@ -18,6 +18,7 @@ func (this *Home) Get() {
 		this.SetSession("number", v.(int)+1)
 		this.Data["Num"] = v.(int)
 	}
+
 	this.Data["Person"] = map[string]interface{}{"Person": "Mirolim"}
 	this.TplNames = "index.tpl"
 

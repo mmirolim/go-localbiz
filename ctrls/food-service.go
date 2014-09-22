@@ -8,6 +8,11 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+type List struct {
+	Id    string `bson:"_id"`
+	Count uint16 `bson:"count"`
+}
+
 type FoodService struct {
 	baseController
 }
@@ -18,17 +23,17 @@ func (this FoodService) Slug() string {
 
 func (this *FoodService) Get() {
 	this.Data["Lang"] = this.Lang
-
+	models.CacheEnabled = true
 	// get FoodService by slug
 	slug := this.Ctx.Input.Param(":slug")
 	var fd models.FoodService
-	err := models.DocFindOne(bson.M{"slug": slug}, &fd)
+	err := models.DocFindOne(bson.M{"slug": slug}, bson.M{}, &fd, 60)
 	if err != nil {
 		beego.Error(err)
 		this.Abort("404")
 	}
 	var near models.Near
-	err = models.DocFindNear(1, 1000, fd, &near)
+	err = models.DocFindNear(1, 1000, fd, &near, 60)
 	check("FS Get -> ", err)
 	var fds []struct {
 		Dis float32
@@ -48,7 +53,7 @@ func (this *FoodService) Get() {
 // method to process fs category requests
 func (this *FoodService) Category() {
 	var err error
-
+	models.CacheEnabled = true
 	// get attr, tag and city
 	attr := this.Ctx.Input.Param(":attr")
 	tag := s.Replace(this.Ctx.Input.Param(":tag"), "_", " ", -1)
@@ -62,20 +67,16 @@ func (this *FoodService) Category() {
 	}
 
 	// cache category list
-	cacheKey := city + attr + tag
 	var fds []models.FoodService
-	if !cacheEnabled || !cacheIsExist(cacheKey) {
-		// get all places with cat and city
-		err = models.DocFind(q, models.FoodService{}, &fds)
-		check("Category FInd ->", err)
-		if cacheEnabled && err == nil {
-			cachePut(cacheKey, fds, 60)
-		}
-	} else {
-		cacheGet(cacheKey, &fds)
-	}
+	// get all places with cat and city
+	err = models.DocFind(q, bson.M{"name": 1, "slug": 1}, models.FoodService{}, &fds, 60)
+	check("Category FInd ->", err)
+
 	count := len(fds)
 
+	var catList []List
+	err = models.DocCountDistinct(models.FoodService{}, "types", &catList, 60)
+	check("FS->category DocCountDistinct -> ", err)
 	this.TplNames = "food-service/category.tpl"
 
 	this.Data["Data"] = struct {
@@ -83,11 +84,13 @@ func (this *FoodService) Category() {
 		City     string
 		FdsList  []models.FoodService
 		Count    int
+		CatList  []List
 	}{
 		tag,
 		city,
 		fds,
 		count,
+		catList,
 	}
 
 }
