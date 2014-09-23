@@ -79,9 +79,12 @@ func InitConnection() {
 	// import to pkg scope
 	MgoSession = session
 
-	// init indexes of models
+	// init indexes of models and panic something wrong
 	var fds FoodService
-	_, _ = DocInitIndex(fds)
+	_, err = DocInitIndex(fds)
+	if err != nil {
+		panic(err)
+	}
 
 	// check redis cache
 	if errCache != nil {

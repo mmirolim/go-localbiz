@@ -23,7 +23,6 @@ func (this FoodService) Slug() string {
 
 func (this *FoodService) Get() {
 	this.Data["Lang"] = this.Lang
-	models.CacheEnabled = true
 	// get FoodService by slug
 	slug := this.Ctx.Input.Param(":slug")
 	var fd models.FoodService
@@ -53,7 +52,6 @@ func (this *FoodService) Get() {
 // method to process fs category requests
 func (this *FoodService) Category() {
 	var err error
-	models.CacheEnabled = true
 	// get attr, tag and city
 	attr := this.Ctx.Input.Param(":attr")
 	tag := s.Replace(this.Ctx.Input.Param(":tag"), "_", " ", -1)
