@@ -32,7 +32,7 @@ func (this *FoodService) Get() {
 		this.Abort("404")
 	}
 	var near models.Near
-	err = models.DocFindNear(1, 1000, fd, &near, 60)
+	err = models.DocFindNear(1, 1000, &fd, &near, 60)
 	check("FS Get -> ", err)
 	var fds []struct {
 		Dis float32
@@ -67,13 +67,13 @@ func (this *FoodService) Category() {
 	// cache category list
 	var fds []models.FoodService
 	// get all places with cat and city
-	err = models.DocFind(q, bson.M{"name": 1, "slug": 1}, models.FoodService{}, &fds, 60)
+	err = models.DocFind(q, bson.M{"name": 1, "slug": 1}, &models.FoodService{}, &fds, 60)
 	check("Category FInd ->", err)
 
 	count := len(fds)
 
 	var catList []List
-	err = models.DocCountDistinct(models.FoodService{}, "types", &catList, 60)
+	err = models.DocCountDistinct(&models.FoodService{}, "types", &catList, 60)
 	check("FS->category DocCountDistinct -> ", err)
 	this.TplNames = "food-service/category.tpl"
 

@@ -8,7 +8,7 @@ import (
 
 var (
 	// define indexes
-	mgoIndexes = []mgo.Index{
+	foodServiceIndexes = []mgo.Index{
 		mgo.Index{
 			Key: []string{"name"},
 		},
@@ -104,9 +104,18 @@ func (f FoodService) GetC() string {
 }
 
 func (f FoodService) GetIndex() []mgo.Index {
-	return mgoIndexes
+	return foodServiceIndexes
 }
 
 func (f FoodService) GetLocation() Geo {
 	return f.Geo
+}
+
+func (f *FoodService) SetDefaults() {
+	if f.CreatedAt.Year() == 1 {
+		f.CreatedAt = time.Now()
+	}
+	if f.UpdatedAt.Year() == 1 {
+		f.UpdatedAt = time.Now()
+	}
 }

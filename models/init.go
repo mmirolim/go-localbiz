@@ -8,7 +8,7 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/cache"
-	_ "github.com/mmirolim/beego/cache/redis"
+	_ "github.com/astaxie/beego/cache/redis"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -30,6 +30,7 @@ type BsonData struct {
 type DocModel interface {
 	GetC() string
 	GetIndex() []mgo.Index
+	SetDefaults()
 	GetLocation() Geo
 }
 
@@ -80,8 +81,7 @@ func InitConnection() {
 	MgoSession = session
 
 	// init indexes of models and panic something wrong
-	var fds FoodService
-	_, err = DocInitIndex(fds)
+	_, err = DocInitIndex(&FoodService{})
 	if err != nil {
 		panic(err)
 	}
@@ -237,5 +237,19 @@ func DocCountDistinct(m DocModel, category string, data interface{}, timeout int
 		cachePut(cacheKey, data, timeout)
 	}
 
+	return err
+}
+
+func DocCreate(m DocModel) error {
+	var err error
+	sess := MgoSession.Copy()
+	defer sess.Close()
+
+	// set defaults
+	m.SetDefaults()
+
+	collection := sess.DB(MongoDbName).C(m.GetC())
+	err = collection.Insert(m)
+	beego.Error(m)
 	return err
 }
