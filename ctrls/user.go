@@ -33,6 +33,7 @@ func (this *User) Get() {
 }
 
 func (this *User) SignUp() {
+	var err error
 	this.TplNames = "user/signup.tpl"
 	var user models.User
 	isNewUser := this.GetSession("newUser")
@@ -94,7 +95,7 @@ func (this *User) SignUp() {
 	user.Gender = formMap["gender"][0]
 	// check if username is free
 	var existentUser models.User
-	err := models.DocFindOne(bson.M{"username": user.UserName}, bson.M{"username": 1}, &existentUser, 0)
+	err = models.DocFindOne(bson.M{"username": user.UserName}, bson.M{"username": 1}, &existentUser, 0)
 	if existentUser.UserName != "" {
 		this.Data["ValidationErrors"] = []struct {
 			Key     string

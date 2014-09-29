@@ -13,7 +13,7 @@ type Auth struct {
 	baseController
 }
 
-var facebook, err = oauth2.NewConfig(&oauth2.Options{
+var facebook, errFb = oauth2.NewConfig(&oauth2.Options{
 	ClientID:     "892068490806056",
 	ClientSecret: "194a38221d6b5b2313149b3b3510b60d",
 	RedirectURL:  "http://yalp.go/auth",
@@ -27,6 +27,8 @@ func (this *Auth) Login() {
 	if referer != "" {
 		this.SetSession("redirectAfter", referer)
 	}
+	// check oauth2 configurations for all providers
+	panicOnErr(errFb)
 	url := facebook.AuthCodeURL("state", "online", "auto")
 
 	this.TplNames = "login.tpl"
@@ -54,7 +56,6 @@ func (this *Auth) Authorize() {
 	// confirm identity
 	code := this.Input().Get("code")
 	if code == "" {
-		beego.Warn("Redirect?")
 		this.Ctx.Redirect(302, "/")
 		return
 	}
