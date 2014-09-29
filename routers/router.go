@@ -17,7 +17,8 @@ func IsAuthenticated(ctx *context.Context) {
 func init() {
 	beego.Router("/:city/"+ctrls.FoodService{}.Slug()+"/:attr?/:tag", &ctrls.FoodService{}, "get:Category")
 	beego.Router("/"+ctrls.FoodService{}.Slug()+"/:slug", &ctrls.FoodService{})
-	beego.Router("/login", &ctrls.Auth{})
+	beego.Router("/login", &ctrls.Auth{}, "get:Login")
+	beego.Router("/logout", &ctrls.Auth{}, "get:Logout")
 	beego.Router("/auth", &ctrls.Auth{}, "*:Authorize")
 	beego.Router("/user/:id", &ctrls.User{})
 	beego.Router("/signup", &ctrls.User{}, "*:SignUp")

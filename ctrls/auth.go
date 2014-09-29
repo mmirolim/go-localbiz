@@ -21,15 +21,13 @@ var facebook, err = oauth2.NewConfig(&oauth2.Options{
 	"https://www.facebook.com/dialog/oauth",
 	"https://graph.facebook.com/oauth/access_token")
 
-func (this *Auth) Get() {
+func (this *Auth) Login() {
 
-	if err != nil {
-		beego.Warn(err)
-		this.Abort("403")
+	referer := this.Ctx.Request.Referer()
+	if referer != "" {
+		this.SetSession("redirectAfter", referer)
 	}
-
 	url := facebook.AuthCodeURL("state", "online", "auto")
-	beego.Warn(url)
 
 	this.TplNames = "login.tpl"
 	this.Data["Data"] = struct {
@@ -39,12 +37,22 @@ func (this *Auth) Get() {
 	}
 }
 
+func (this *Auth) Logout() {
+	var referrer string
+	referrer = this.Ctx.Request.Referer()
+	if referrer != "" {
+		referrer = "/"
+	}
+
+	this.DestroySession()
+	this.Redirect(referrer, 302)
+}
+
 func (this *Auth) Authorize() {
 	this.EnableRender = false
 	//@todo add msg to what was wrong
 	// confirm identity
 	code := this.Input().Get("code")
-	beego.Warn(code)
 	if code == "" {
 		beego.Warn("Redirect?")
 		this.Ctx.Redirect(302, "/")
@@ -74,16 +82,17 @@ func (this *Auth) Authorize() {
 		this.Redirect("/", 302)
 		return
 	}
-	beego.Warn(userFbData)
 	var user models.User
 	err = models.DocFindOne(bson.M{"fb_data.id": userFbData.Id}, bson.M{"name": 1}, &user, 60)
-	if err != nil && err.Error() != "not found" {
+	if err != nil && err != models.DocNotFound {
 		beego.Error(err)
-		this.Redirect("/", 302)
+		this.Redirect("/login", 302)
 		return
-	} else if user.UserName == "" {
+	}
+
+	if err == models.DocNotFound {
 		// this should be new user
-		this.SetSession("newUser", 1)
+		this.SetSession("newUser", true)
 		data, err := json.Marshal(&userFbData)
 		if err != nil {
 			beego.Error(err)
@@ -94,6 +103,13 @@ func (this *Auth) Authorize() {
 		this.SetSession("newUserData", data)
 		this.Redirect("/signup", 302)
 		return
+	} else {
+		redirectUrl := this.GetSession("redirectAfter")
+		if redirectUrl == nil {
+			redirectUrl = "/"
+		}
+		this.SetSession("isAuth", true)
+		this.Redirect(redirectUrl.(string), 302)
 	}
 
 }

@@ -29,6 +29,12 @@ func check(s string, e error) bool {
 	return false
 }
 
+func panicOnErr(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
+
 func GetUrl(ss ...string) string {
 	var u string
 	// need empty first element to append first word with slash

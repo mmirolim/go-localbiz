@@ -9,6 +9,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/cache"
 	_ "github.com/astaxie/beego/cache/redis"
+	"github.com/astaxie/beego/validation"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -21,6 +22,7 @@ var (
 	CacheEnabled, _ = beego.AppConfig.Bool("cache::enabled")
 	Cache, errCache = cache.NewCache("redis", `{"conn":":6379"}`)
 	cachePrefix     = beego.AppConfig.String("cache::prefix")
+	DocNotFound     = mgo.ErrNotFound
 )
 
 type BsonData struct {
@@ -70,6 +72,12 @@ func check(s string, e error) bool {
 	return false
 }
 
+func panicOnErr(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
+
 func InitConnection() {
 	MongoHost = beego.AppConfig.String("db::mongohost")
 	MongoDbName = beego.AppConfig.String("db::mongodbname")
@@ -80,18 +88,26 @@ func InitConnection() {
 	// import to pkg scope
 	MgoSession = session
 
-	// init indexes of models and panic something wrong
-	_, err = DocInitIndex(&FoodService{})
-	if err != nil {
-		panic(err)
-	}
+	// init indexes of models and panic if something wrong
+	err = DocInitIndex(&FoodService{})
+	panicOnErr(err)
+	err = DocInitIndex(&User{})
+	panicOnErr(err)
 
-	// check redis cache
-	if errCache != nil {
-		panic(errCache)
-	}
+	// check new cache
+	panicOnErr(errCache)
 
 }
+
+func Validate(m DocModel) ([]*validation.ValidationError, error) {
+	valid := validation.Validation{}
+	b, err := valid.Valid(m)
+	if !b {
+		return valid.Errors, err
+	}
+	return nil, err
+}
+
 func genCacheKey(table string, method string, queries ...interface{}) string {
 	var key string
 	for _, v := range queries {
@@ -123,18 +139,18 @@ func cacheGet(key string, data interface{}) error {
 	return err
 }
 
-func DocInitIndex(m DocModel) (bool, error) {
+func DocInitIndex(m DocModel) error {
 	var err error
 	sess := MgoSession.Copy()
 	defer sess.Close()
 	for _, v := range m.GetIndex() {
 		err = sess.DB(MongoDbName).C(m.GetC()).EnsureIndex(v)
 		if check("InitIndex -> ", err) {
-			return false, err
+			break
 		}
 	}
 
-	return true, err
+	return err
 }
 
 func DocFind(q bson.D, f bson.M, m DocModel, data interface{}, timeout int64) error {
@@ -240,8 +256,14 @@ func DocCountDistinct(m DocModel, category string, data interface{}, timeout int
 	return err
 }
 
-func DocCreate(m DocModel) error {
-	var err error
+func DocCreate(m DocModel) ([]*validation.ValidationError, error) {
+	beego.Warn("Doc Create")
+	// validate model before inserting
+	vErrors, err := Validate(m)
+	if err != nil || vErrors != nil {
+		return vErrors, err
+	}
+
 	sess := MgoSession.Copy()
 	defer sess.Close()
 
@@ -250,6 +272,6 @@ func DocCreate(m DocModel) error {
 
 	collection := sess.DB(MongoDbName).C(m.GetC())
 	err = collection.Insert(m)
-	beego.Error(m)
-	return err
+
+	return vErrors, err
 }

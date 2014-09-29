@@ -6,6 +6,7 @@ import (
 	"github.com/mmirolim/yalp-go/models"
 	"gopkg.in/mgo.v2/bson"
 	"strings"
+	"time"
 )
 
 type User struct {
@@ -13,7 +14,6 @@ type User struct {
 }
 
 func (this *User) Get() {
-	beego.Warn("User.Get")
 	this.TplNames = "user/user.tpl"
 	// find user from id
 	id := this.Ctx.Input.Param(":id")
@@ -36,13 +36,12 @@ func (this *User) SignUp() {
 	this.TplNames = "user/signup.tpl"
 	var user models.User
 	isNewUser := this.GetSession("newUser")
-	if isNewUser != 1 || isNewUser == nil {
+	if isNewUser != true || isNewUser == nil {
 		beego.Error("Sign up after social login")
 		this.Redirect("/", 302)
 		return
 	}
 	data := this.GetSession("newUserData")
-	beego.Warn(data)
 	if data == nil {
 		beego.Error("newUserData should not be nil")
 		this.Redirect("/", 302)
@@ -59,7 +58,9 @@ func (this *User) SignUp() {
 	switch socialNet {
 	case "fb":
 		err := json.Unmarshal(data.([]byte), &fbData)
+		// @todo maybe should inform and redirect
 		check("User.Get json.Unmarshal -> ", err)
+		user.FacebookData = fbData
 		user.UserName = fbData.UserName
 		user.FirstName = fbData.FirstName
 		user.LastName = fbData.LastName
@@ -72,12 +73,46 @@ func (this *User) SignUp() {
 
 	// prefill data from social account
 	this.Data["User"] = user
-	// process sign-up data
-	if this.Ctx.Request.Method == "POST" {
-		beego.Warn("this is post")
-		beego.Warn(this.Ctx.Request.Method)
-		formMap := this.Ctx.Request.PostForm
-		beego.Warn(formMap)
-		beego.Warn(formMap["first_name"][0])
+
+	// process sign-up data from form
+	if this.Ctx.Request.Method != "POST" {
+		return
 	}
+
+	formMap := this.Ctx.Request.PostForm
+	user.UserName = formMap["username"][0]
+	user.Name = formMap["first_name"][0] + formMap["last_name"][0]
+	user.FirstName = formMap["first_name"][0]
+	user.LastName = formMap["last_name"][0]
+	user.Email = formMap["email"][0]
+	// date format layout year 2006, month 01 and day is 02
+	bday := formMap["bday"][0]
+	if bday != "" {
+		user.Bday, err = time.Parse("2006-01-02", bday)
+		check("User.SignUp Bday format error ->", err)
+	}
+	user.Gender = formMap["gender"][0]
+	// check if username is free
+	var existentUser models.User
+	err := models.DocFindOne(bson.M{"username": user.UserName}, bson.M{"username": 1}, &existentUser, 0)
+	if existentUser.UserName != "" {
+		this.Data["ValidationErrors"] = []struct {
+			Key     string
+			Message string
+		}{
+			{"Username", "This username is already taken"},
+		}
+		return
+	}
+	vErrors, err := models.DocCreate(&user)
+	panicOnErr(err)
+	if vErrors != nil {
+		this.Data["ValidationErrors"] = vErrors
+		beego.Warn(vErrors)
+	}
+	// clean session
+	this.DelSession("newUser")
+	this.DelSession("socialNet")
+	this.DelSession("newUserData")
+
 }
