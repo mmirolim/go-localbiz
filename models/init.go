@@ -228,10 +228,11 @@ func DocFindNear(min, max int, m DocModel, data interface{}, timeout int64) erro
 }
 
 // find all distinct tags in arrays and count docs with each tag
-func DocCountDistinct(m DocModel, category string, data interface{}, timeout int64) error {
+func DocCountDistinct(m DocModel, match bson.M, category string, data interface{}, timeout int64) error {
 
 	var err error
 	q := []bson.M{
+		{"$match" : match },
 		{"$project": bson.M{category: 1}},
 		{"$unwind": "$" + category},
 		{"$group": bson.D{{"_id", "$" + category}, {"count", bson.M{"$sum": 1}}}},
@@ -257,7 +258,6 @@ func DocCountDistinct(m DocModel, category string, data interface{}, timeout int
 }
 
 func DocCreate(m DocModel) ([]*validation.ValidationError, error) {
-	beego.Warn("Doc Create")
 	// validate model before inserting
 	vErrors, err := Validate(m)
 	if err != nil || vErrors != nil {
@@ -274,4 +274,24 @@ func DocCreate(m DocModel) ([]*validation.ValidationError, error) {
 	err = collection.Insert(m)
 
 	return vErrors, err
+}
+
+func DocUpdate(q bson.M, m DocModel) ([]*validation.ValidationError, error) {
+	// validate model before inserting
+	vErrors, err := Validate(m)
+	if err != nil || vErrors != nil {
+		return vErrors, err
+	}
+
+	sess := MgoSession.Copy()
+	defer sess.Close()
+
+	// set defaults
+	m.SetDefaults()
+
+	collection := sess.DB(MongoDbName).C(m.GetC())
+	err = collection.Update(q, m)
+
+	return vErrors, err
+
 }

@@ -1,7 +1,7 @@
 package ctrls
 
 import (
-	s "strings"
+	"strings"
 
 	"github.com/astaxie/beego"
 	"github.com/mmirolim/yalp-go/models"
@@ -52,16 +52,17 @@ func (this *FoodService) Get() {
 // method to process fs category requests
 func (this *FoodService) Category() {
 	var err error
+	beego.Error("Cat")
 	// get attr, tag and city
 	attr := this.Ctx.Input.Param(":attr")
-	tag := s.Replace(this.Ctx.Input.Param(":tag"), "_", " ", -1)
+	tag := strings.Replace(this.Ctx.Input.Param(":tag"), "_", " ", -1)
 	city := this.Ctx.Input.Param(":city")
-
+	beego.Warn(tag)
 	// $regex query used to match case sensitive index
 	q := bson.D{
 		{"lang", this.Lang},
 		{attr, bson.M{"$regex": bson.RegEx{`^` + tag, "i"}}},
-		{"address.city", bson.M{"$regex": bson.RegEx{`^` + city, "i"}}},
+		{"city", city },
 	}
 
 	// cache category list
@@ -73,7 +74,7 @@ func (this *FoodService) Category() {
 	count := len(fds)
 
 	var catList []List
-	err = models.DocCountDistinct(&models.FoodService{}, "types", &catList, 60)
+	err = models.DocCountDistinct(&models.FoodService{}, bson.M{"lang" : this.Lang}, "types", &catList, 60)
 	check("FS->category DocCountDistinct -> ", err)
 	this.TplNames = "food-service/category.tpl"
 

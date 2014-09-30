@@ -1,6 +1,6 @@
 [[ $ctrlSlug := .CtrlSlug ]]
 [[ $slug := .Entity.Slug ]]
-[[ $city := .Entity.Address.City ]]
+[[ $city := .Entity.City ]]
 
 <h1>[[ .Entity.Name ]]</h1>
 
@@ -22,19 +22,19 @@
 <h4 class="color-gray">[[T "cuisine" ]]</h4>
 <ul>
     [[ range $key, $val := .Entity.Cuisines ]]
-    <li><a href="[[getUrl $city $ctrlSlug "cuisines" $val]]">[[ $val ]]</a></li>
+    <li><a href="[[getUrl $ctrlSlug $city "cuisines" $val]]">[[ $val ]]</a></li>
     [[ end ]]
 </ul>
 <h4 class="color-gray">[[T "feature" ]]</h4>
 <ul>
     [[ range $key, $val := .Entity.Features ]]
-    <li><a href="[[getUrl $city $ctrlSlug "features" $val]]">[[ $val ]]</a></li>
+    <li><a href="[[getUrl $ctrlSlug $city "features" $val]]">[[ $val ]]</a></li>
     [[ end ]]
 </ul>
 <h4 class="color-gray">[[T "good_for" ]]</h4>
 <ul>
     [[ range $key, $val := .Entity.GoodFor ]]
-    <li><a href="[[getUrl $city $ctrlSlug "good_for" $val]]">[[ $val ]]</a></li>
+    <li><a href="[[getUrl $ctrlSlug $city "good_for" $val]]">[[ $val ]]</a></li>
     [[ end ]]
 </ul>
 

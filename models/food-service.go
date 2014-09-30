@@ -16,6 +16,9 @@ var (
 			Key: []string{"lang", "-name"},
 		},
 		mgo.Index{
+			Key: []string{"city", "lang"},
+		},
+		mgo.Index{
 			Key: []string{"slug"},
 		},
 		mgo.Index{
@@ -68,6 +71,7 @@ type FoodService struct {
 	Id         bson.ObjectId `bson:"_id"`
 	Address    `bson:"address"`
 	Name       string   `bson:"name"`
+	City	string `bson:"city" json:"city"`
 	Desc       string   `bson:"desc"`
 	DressCode  string   `bson:"dress_code"`
 	Fax        string   `bson:"fax"`
