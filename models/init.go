@@ -2,14 +2,13 @@ package models
 
 import (
 	"bytes"
-	"encoding/gob"
 	"fmt"
 	"strings"
 
+	"encoding/gob"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/cache"
 	_ "github.com/astaxie/beego/cache/redis"
-	"github.com/astaxie/beego/validation"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -32,8 +31,14 @@ type BsonData struct {
 type DocModel interface {
 	GetC() string
 	GetIndex() []mgo.Index
+	FmtFields()
 	SetDefaults()
+	Validate() (ValidationErrors, error)
 	GetLocation() Geo
+}
+
+type ValidationErrors struct {
+	Errors map[string][]string
 }
 
 // define model structs
@@ -78,6 +83,13 @@ func panicOnErr(e error) {
 	}
 }
 
+func (v *ValidationErrors) Set(key, str string) {
+	if len(v.Errors) == 0 {
+		v.Errors = make(map[string][]string)
+	}
+	v.Errors[key] = append(v.Errors[key], str)
+}
+
 func InitConnection() {
 	MongoHost = beego.AppConfig.String("db::mongohost")
 	MongoDbName = beego.AppConfig.String("db::mongodbname")
@@ -93,19 +105,14 @@ func InitConnection() {
 	panicOnErr(err)
 	err = DocInitIndex(&User{})
 	panicOnErr(err)
-
 	// check new cache
 	panicOnErr(errCache)
 
-}
+	// register Model structs for gob encoding
+	gob.Register(User{})
+	gob.Register(FoodService{})
+	gob.Register(FacebookData{})
 
-func Validate(m DocModel) ([]*validation.ValidationError, error) {
-	valid := validation.Validation{}
-	b, err := valid.Valid(m)
-	if !b {
-		return valid.Errors, err
-	}
-	return nil, err
 }
 
 func genCacheKey(table string, method string, queries ...interface{}) string {
@@ -232,7 +239,7 @@ func DocCountDistinct(m DocModel, match bson.M, category string, data interface{
 
 	var err error
 	q := []bson.M{
-		{"$match" : match },
+		{"$match": match},
 		{"$project": bson.M{category: 1}},
 		{"$unwind": "$" + category},
 		{"$group": bson.D{{"_id", "$" + category}, {"count", bson.M{"$sum": 1}}}},
@@ -257,41 +264,43 @@ func DocCountDistinct(m DocModel, match bson.M, category string, data interface{
 	return err
 }
 
-func DocCreate(m DocModel) ([]*validation.ValidationError, error) {
+func DocCreate(m DocModel) (ValidationErrors, error) {
 	// validate model before inserting
-	vErrors, err := Validate(m)
-	if err != nil || vErrors != nil {
-		return vErrors, err
+	validation, err := m.Validate()
+	if err != nil || validation.Errors != nil {
+		return validation, err
 	}
 
 	sess := MgoSession.Copy()
 	defer sess.Close()
 
 	// set defaults
+	m.FmtFields()
 	m.SetDefaults()
 
 	collection := sess.DB(MongoDbName).C(m.GetC())
 	err = collection.Insert(m)
 
-	return vErrors, err
+	return validation, err
 }
 
-func DocUpdate(q bson.M, m DocModel) ([]*validation.ValidationError, error) {
+func DocUpdate(q bson.M, m DocModel) (ValidationErrors, error) {
 	// validate model before inserting
-	vErrors, err := Validate(m)
-	if err != nil || vErrors != nil {
-		return vErrors, err
+	validation, err := m.Validate()
+	if err != nil || validation.Errors != nil {
+		return validation, err
 	}
 
 	sess := MgoSession.Copy()
 	defer sess.Close()
 
 	// set defaults
+	m.FmtFields()
 	m.SetDefaults()
 
 	collection := sess.DB(MongoDbName).C(m.GetC())
 	err = collection.Update(q, m)
 
-	return vErrors, err
+	return validation, err
 
 }

@@ -3,6 +3,7 @@ package models
 import (
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"strings"
 	"time"
 )
 
@@ -71,7 +72,7 @@ type FoodService struct {
 	Id         bson.ObjectId `bson:"_id"`
 	Address    `bson:"address"`
 	Name       string   `bson:"name"`
-	City	string `bson:"city" json:"city"`
+	City       string   `bson:"city" json:"city"`
 	Desc       string   `bson:"desc"`
 	DressCode  string   `bson:"dress_code"`
 	Fax        string   `bson:"fax"`
@@ -114,7 +115,10 @@ func (f FoodService) GetIndex() []mgo.Index {
 func (f FoodService) GetLocation() Geo {
 	return f.Geo
 }
+func (f *FoodService) FmtFields() {
 
+	f.City = strings.ToLower(f.City)
+}
 func (f *FoodService) SetDefaults() {
 	if f.CreatedAt.Year() == 1 {
 		f.CreatedAt = time.Now()
@@ -122,4 +126,12 @@ func (f *FoodService) SetDefaults() {
 	if f.UpdatedAt.Year() == 1 {
 		f.UpdatedAt = time.Now()
 	}
+}
+
+func (f *FoodService) Validate() (ValidationErrors, error) {
+	var err error
+	var vErrors ValidationErrors
+
+	return vErrors, err
+
 }
