@@ -1,7 +1,6 @@
 package ctrls
 
 import (
-	"encoding/json"
 	"github.com/astaxie/beego"
 	"github.com/mmirolim/yalp-go/models"
 	"gopkg.in/mgo.v2/bson"
@@ -33,9 +32,10 @@ func (this *User) Get() {
 }
 
 func (this *User) SignUp() {
-	var err error
+
 	this.TplNames = "user/signup.tpl"
 	var user models.User
+
 	isNewUser := this.GetSession("newUser")
 	if isNewUser != true || isNewUser == nil {
 		beego.Error("Sign up after social login")
@@ -54,35 +54,40 @@ func (this *User) SignUp() {
 		this.Redirect("/", 302)
 		return
 	}
-	var fbData models.FacebookData
-
 	switch socialNet {
 	case "fb":
-		err := json.Unmarshal(data.([]byte), &fbData)
-		// @todo maybe should inform and redirect
-		check("User.Get json.Unmarshal -> ", err)
-		user.FacebookData = fbData
-		user.UserName = fbData.UserName
-		user.FirstName = fbData.FirstName
-		user.LastName = fbData.LastName
-		user.Locale = strings.ToLower(fbData.Locale)
-		user.Name = fbData.Name
-		user.Gender = fbData.Gender
+		fb := data.(models.FacebookData)
+		user.FacebookData = fb
+		user.UserName = fb.UserName
+		user.FirstName = fb.FirstName
+		user.LastName = fb.LastName
+		user.Locale = strings.ToLower(fb.Locale)
+		user.Name = fb.Name
+		user.Gender = fb.Gender
+	case "google":
+		beego.Warn("Need to implement")
 	default:
 		beego.Error("Not known social net name")
+		beego.Warn(socialNet)
 	}
 
 	// prefill data from social account
 	this.Data["User"] = user
 
+}
+func (this *User) SignUpProcess() {
+	var err error
+	var user models.User
+	this.TplNames = "user/signup.tpl"
+
 	// process sign-up data from form
 	if this.Ctx.Request.Method != "POST" {
 		return
 	}
-
 	formMap := this.Ctx.Request.PostForm
+	user.Locale = this.Lang
 	user.UserName = formMap["username"][0]
-	user.Name = formMap["first_name"][0] + formMap["last_name"][0]
+	user.SetName(formMap["first_name"][0], formMap["last_name"][0])
 	user.FirstName = formMap["first_name"][0]
 	user.LastName = formMap["last_name"][0]
 	user.Email = formMap["email"][0]
@@ -107,13 +112,15 @@ func (this *User) SignUp() {
 	}
 	vErrors, err := models.DocCreate(&user)
 	panicOnErr(err)
-	if vErrors != nil {
-		this.Data["ValidationErrors"] = vErrors
-		beego.Warn(vErrors)
+	if vErrors.Errors != nil {
+		this.Data["ValidationErrors"] = vErrors.Errors
+	} else {
+		// clean session
+		this.DelSession("newUser")
+		this.DelSession("socialNet")
+		this.DelSession("newUserData")
+		//@todo should redirect after successeful signup to user account to add extra info and img
 	}
-	// clean session
-	this.DelSession("newUser")
-	this.DelSession("socialNet")
-	this.DelSession("newUserData")
 
+	this.Data["User"] = user
 }

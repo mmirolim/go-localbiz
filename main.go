@@ -19,6 +19,7 @@ func initialize() {
 	ctrls.InitApp()
 	// init connection to mongodb
 	models.InitConnection()
+
 }
 
 func main() {

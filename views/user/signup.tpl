@@ -3,7 +3,9 @@
 <div id="validation-msg">
     <ul class="validation-erros">
         [[ range $val := .ValidationErrors ]]
-        <li>[[ $val.Key ]] [[ $val.Message ]]</a></li>
+            [[ range $msg := $val ]]
+            <li>[[ $msg ]]</li>
+            [[ end ]]
         [[ end ]]
     </ul>
 </div>

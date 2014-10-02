@@ -1,7 +1,7 @@
 package ctrls
 
 import (
-	s "strings"
+	"strings"
 
 	"github.com/astaxie/beego"
 	"github.com/nicksnyder/go-i18n/i18n"
@@ -26,6 +26,7 @@ func check(s string, e error) bool {
 		beego.Error(s + e.Error())
 		return true
 	}
+
 	return false
 }
 
@@ -41,9 +42,9 @@ func GetUrl(ss ...string) string {
 	// ex /city/fs/one
 	str := []string{""}
 	for _, v := range ss {
-		str = append(str, s.Replace(v, " ", "_", -1))
+		str = append(str, strings.Replace(v, " ", "_", -1))
 	}
-	u = s.ToLower(s.Join(str, "/"))
+	u = strings.ToLower(strings.Join(str, "/"))
 	return u
 }
 
@@ -71,8 +72,8 @@ func (this *baseController) Prepare() {
 
 func initLocales() {
 	// Init lang list
-	langs := s.Split(beego.AppConfig.String("lang::types"), "|")
-	names := s.Split(beego.AppConfig.String("lang::names"), "|")
+	langs := strings.Split(beego.AppConfig.String("lang::types"), "|")
+	names := strings.Split(beego.AppConfig.String("lang::names"), "|")
 	defaultLang = beego.AppConfig.String("lang::default")
 
 	langTypes = make(map[string]string)
@@ -89,16 +90,15 @@ func initLocales() {
 func (this *baseController) setLangVer() {
 	var lang string
 	// Check URL arguments.
-	urlLang := this.Input().Get("lang")
+	urlLang := strings.ToLower(this.Input().Get("lang"))
 
 	// Get language info from 'Accept-Language'
-	acceptLang := s.ToLower(this.Ctx.Request.Header.Get("Accept-Language"))
+	acceptLang := strings.ToLower(this.Ctx.Request.Header.Get("Accept-Language"))
 
 	T, err := i18n.Tfunc(urlLang, acceptLang, defaultLang)
 	check("initLocales i18n.Tfunc ", err)
 	// register translation func with langs
 	beego.AddFuncMap("T", T)
-
 	if langTypes[urlLang] != "" {
 		lang = urlLang
 	} else if langTypes[acceptLang] != "" {
@@ -118,5 +118,4 @@ func InitApp() {
 	initLocales()
 	// register getUrl func
 	beego.AddFuncMap("getUrl", GetUrl)
-
 }

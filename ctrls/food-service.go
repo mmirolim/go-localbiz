@@ -62,7 +62,7 @@ func (this *FoodService) Category() {
 	q := bson.D{
 		{"lang", this.Lang},
 		{attr, bson.M{"$regex": bson.RegEx{`^` + tag, "i"}}},
-		{"city", city },
+		{"city", city},
 	}
 
 	// cache category list
@@ -74,7 +74,7 @@ func (this *FoodService) Category() {
 	count := len(fds)
 
 	var catList []List
-	err = models.DocCountDistinct(&models.FoodService{}, bson.M{"lang" : this.Lang}, "types", &catList, 60)
+	err = models.DocCountDistinct(&models.FoodService{}, bson.M{"lang": this.Lang}, "types", &catList, 60)
 	check("FS->category DocCountDistinct -> ", err)
 	this.TplNames = "food-service/category.tpl"
 
