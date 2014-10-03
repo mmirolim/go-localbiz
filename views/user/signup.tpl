@@ -20,5 +20,6 @@
         <input type="radio" name="gender" value="female" [[ if eq .User.Gender "female" ]] checked [[ end ]]/>Female<br/>
         City: should be select
         <input type="submit" value="SignUp"/>
+        [[ .csrfToken ]]
     </form>
 </div>

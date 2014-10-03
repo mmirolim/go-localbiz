@@ -6,6 +6,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"strings"
 	"time"
+	"html/template"
 )
 
 type User struct {
@@ -38,7 +39,7 @@ func (this *User) SignUp() {
 
 	isNewUser := this.GetSession("newUser")
 	if isNewUser != true || isNewUser == nil {
-		beego.Error("Sign up after social login")
+		beego.Error("Sign up after social login for new users")
 		this.Redirect("/", 302)
 		return
 	}
@@ -71,6 +72,7 @@ func (this *User) SignUp() {
 		beego.Warn(socialNet)
 	}
 
+	this.Data["csrfToken"] = template.HTML(this.XsrfFormHtml())
 	// prefill data from social account
 	this.Data["User"] = user
 
@@ -122,5 +124,6 @@ func (this *User) SignUpProcess() {
 		//@todo should redirect after successeful signup to user account to add extra info and img
 	}
 
+	this.Data["csrfToken"] = template.HTML(this.XsrfFormHtml())
 	this.Data["User"] = user
 }

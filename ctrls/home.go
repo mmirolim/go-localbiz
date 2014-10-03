@@ -13,6 +13,7 @@ type Home struct {
 func (this *Home) Get() {
 	this.TplNames = "index.tpl"
 
+	this.Data["csrf"] = this.XsrfToken()
 	this.Data["Lang"] = this.Lang
 	this.Data["Title"] = "Yalp.uz"
 	this.Data["Name"] = "My name is Mirolim!"

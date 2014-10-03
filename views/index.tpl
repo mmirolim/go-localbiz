@@ -4,4 +4,5 @@ Tranlatable content from index.tpl<br/>
 <h2>[[ .Num ]]</h2>
 <h2>[[T "cuisine" 2]]</h2>
 <h1>[[ .isAuth ]]</h1>
+<h3>[[ .csrf ]]</h3>
 

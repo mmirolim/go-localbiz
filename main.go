@@ -31,6 +31,13 @@ func main() {
 		beego.AdminHttpPort = 8088
 		ctrls.IsPro = false
 	}
+
+	// enable CSRF protection
+	beego.EnableXSRF = true
+	// @todo change csrf key
+	beego.XSRFKEY = "61oETzKXQAGaYdkL5gEmGeJJFuYh7EQnp2XdTP1o"
+	beego.XSRFExpire = 3600
+
 	// change default tpl tags
 	beego.TemplateLeft = "[["
 	beego.TemplateRight = "]]"

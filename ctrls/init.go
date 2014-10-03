@@ -111,7 +111,6 @@ func (this *baseController) setLangVer() {
 	this.Lang = lang
 	this.Data["Lang"] = lang
 	this.Data["CurrentLang"] = langTypes[lang]
-
 }
 
 func InitApp() {
