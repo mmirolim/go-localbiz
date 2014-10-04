@@ -92,6 +92,10 @@ type FacebookData struct {
 	AccessToken string `bson:"access_token"`
 }
 
+type GoogleData struct {
+	Id string `bson:"id" json:"id"`
+}
+
 //@todo fix validation for email now requiring
 type User struct {
 	Id           bson.ObjectId `bson:"_id,omitempty" json:"id,omitempty"`
@@ -107,6 +111,7 @@ type User struct {
 	Role         int           `bson:"role" json:"role"`
 	Bday         time.Time     `bson:"bday,omitempty" json:"bday,omitempty"`
 	FacebookData `bson:"fb_data" json:"fb_data"`
+	GoogleData   `bson"gg_data" json:"gg_data"`
 	Address      `bson:"address" json:"address"`
 	Geo          `bson:"loc,omitempty" json:"loc,omitempty`
 	Deleted      bool      `bson:"deleted" json:"deleted"`
@@ -129,10 +134,16 @@ func (u User) GetLocation() Geo {
 	return u.Geo
 }
 func (u *User) FmtFields() {
+	//@todo create helper fmt function to pass func name to run on argument
+	actions := []string{"ToLower", "TrimSpace"}
+	trimSpace := []string{"TrimSpace"}
+	u.UserName = FmtString(u.UserName, actions)
+	u.FirstName = FmtString(u.FirstName, trimSpace)
+	u.LastName = FmtString(u.LastName, trimSpace)
+	u.Email = FmtString(u.Email, actions)
+	u.Locale = FmtString(u.Locale, actions)
+	u.City = FmtString(u.City, actions)
 
-	u.UserName = strings.ToLower(u.UserName)
-	u.Locale = strings.ToLower(u.Locale)
-	u.City = strings.ToLower(u.City)
 }
 func (u *User) SetDefaults() {
 
@@ -150,7 +161,7 @@ func (u *User) SetDefaults() {
 }
 
 func (u *User) SetName(firstName, lastName string) {
-	u.Name = firstName + " " + lastName
+	u.Name = strings.TrimSpace(firstName) + " " + strings.TrimSpace(lastName)
 }
 
 // validate field of DocModel
@@ -164,6 +175,9 @@ func (u *User) Validate() (ValidationErrors, error) {
 	// username is required
 	if u.UserName == "" {
 		vErrors.Set("username", "Username required")
+	}
+	if u.UserName != "" && strings.Index(u.UserName, " ") != -1 {
+		vErrors.Set("username", "Username can't contain spaces")
 	}
 	//@todo maybe make regex
 	if strings.Index(u.UserName, "admin") != -1 && u.Role != roleAdmin {

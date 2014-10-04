@@ -40,25 +40,29 @@ func (this *Auth) Login() {
 	// check oauth2 configurations for all providers
 	panicOnErr(errFb)
 	panicOnErr(errG)
-	isAuth := this.GetSession("isAuth")
-	if isAuth == true {
+	userId := this.GetSession("userId")
+	// if user authenticated redirect
+	if userId != nil {
 		this.Redirect("/", 302)
 		return
 	}
 	socialNet := this.Ctx.Input.Param(":socialNet")
 	if socialNet == "" {
 		this.TplNames = "login.tpl"
+		loginUrl := "/login/"
 		this.Data["Data"] = struct {
 			UrlFb, UrlG string
 		}{
-			"/login/" + facebook, "/login/" + google,
+			loginUrl + facebook, loginUrl + google,
 		}
 		return
 	}
+	// store referrer to redirect to a page where user logged in
 	referer := this.Ctx.Request.Referer()
 	if referer != "" {
 		this.SetSession("redirectAfter", referer)
 	}
+	// @todo add csrf tokens as state
 	var urlR string
 	switch socialNet {
 	case facebook:
@@ -109,6 +113,7 @@ func (this *Auth) Authorize() {
 		this.Redirect("/", 302)
 		return
 	}
+
 	var user models.User
 	err = models.DocFindOne(bson.M{"fb_data.id": userFbData.Id}, bson.M{}, &user, 0)
 	if err != nil && err != models.DocNotFound {
@@ -118,8 +123,6 @@ func (this *Auth) Authorize() {
 	}
 	if err == models.DocNotFound {
 		// this should be new user
-		this.SetSession("newUser", true)
-		this.SetSession("socialNet", "fb")
 		this.SetSession("newUserData", userFbData)
 		this.Redirect("/signup", 302)
 		return
@@ -132,7 +135,7 @@ func (this *Auth) Authorize() {
 			this.Redirect("/login", 302)
 			return
 		}
-		if vErrors.Errors != nil {
+		if vErrors != nil {
 			beego.Warn(vErrors)
 			this.Redirect("/login", 302)
 			return
@@ -141,7 +144,7 @@ func (this *Auth) Authorize() {
 		if redirectUrl == nil {
 			redirectUrl = "/"
 		}
-		this.SetSession("isAuth", true)
+		this.SetSession("userId", user.Id.Hex())
 		this.Redirect(redirectUrl.(string), 302)
 	}
 

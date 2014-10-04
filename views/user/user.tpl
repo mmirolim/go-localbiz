@@ -1,4 +1,3 @@
-<h3>Access Token [[ .User.AccessToken ]]</h3>
 <ul>
     <li>[[ .User.Id ]]</li>
     <li>[[ .User.FirstName ]]</li>

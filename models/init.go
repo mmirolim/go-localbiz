@@ -37,9 +37,7 @@ type DocModel interface {
 	GetLocation() Geo
 }
 
-type ValidationErrors struct {
-	Errors map[string][]string
-}
+type ValidationErrors map[string][]string
 
 // define model structs
 type Geo struct {
@@ -84,10 +82,31 @@ func panicOnErr(e error) {
 }
 
 func (v *ValidationErrors) Set(key, str string) {
-	if len(v.Errors) == 0 {
-		v.Errors = make(map[string][]string)
+	vErrors := *v
+	if len(vErrors) == 0 {
+		vErrors = make(map[string][]string)
 	}
-	v.Errors[key] = append(v.Errors[key], str)
+	vErrors[key] = append(vErrors[key], str)
+	*v = vErrors
+}
+
+// fmt field helper
+func FmtString(prop string, actions []string) string {
+	for _, v := range actions {
+		switch v {
+		case "ToLower":
+			prop = strings.ToLower(prop)
+		case "TrimSpace":
+			prop = strings.TrimSpace(prop)
+		case "Title":
+			prop = strings.Title(prop)
+		case "ToTitle":
+			prop = strings.ToTitle(prop) // Unicode ToUpper
+		case "ToUpper":
+			prop = strings.ToUpper(prop)
+		}
+	}
+	return prop
 }
 
 func InitConnection() {
@@ -266,9 +285,9 @@ func DocCountDistinct(m DocModel, match bson.M, category string, data interface{
 
 func DocCreate(m DocModel) (ValidationErrors, error) {
 	// validate model before inserting
-	validation, err := m.Validate()
-	if err != nil || validation.Errors != nil {
-		return validation, err
+	vErrors, err := m.Validate()
+	if err != nil || vErrors != nil {
+		return vErrors, err
 	}
 
 	sess := MgoSession.Copy()
@@ -281,14 +300,14 @@ func DocCreate(m DocModel) (ValidationErrors, error) {
 	collection := sess.DB(MongoDbName).C(m.GetC())
 	err = collection.Insert(m)
 
-	return validation, err
+	return vErrors, err
 }
 
 func DocUpdate(q bson.M, m DocModel) (ValidationErrors, error) {
 	// validate model before inserting
-	validation, err := m.Validate()
-	if err != nil || validation.Errors != nil {
-		return validation, err
+	vErrors, err := m.Validate()
+	if err != nil || vErrors != nil {
+		return vErrors, err
 	}
 
 	sess := MgoSession.Copy()
@@ -301,6 +320,6 @@ func DocUpdate(q bson.M, m DocModel) (ValidationErrors, error) {
 	collection := sess.DB(MongoDbName).C(m.GetC())
 	err = collection.Update(q, m)
 
-	return validation, err
+	return vErrors, err
 
 }
