@@ -5,7 +5,6 @@ import (
 	"github.com/mmirolim/yalp-go/models"
 	"gopkg.in/mgo.v2/bson"
 	"html/template"
-	"strings"
 	"time"
 )
 
@@ -44,15 +43,9 @@ func (this *User) SignUp() {
 
 	switch newUserData.(type) {
 	case models.FacebookData:
-		fb := newUserData.(models.FacebookData)
-		user.UserName = fb.UserName
-		user.FirstName = fb.FirstName
-		user.LastName = fb.LastName
-		user.Locale = strings.ToLower(fb.Locale)
-		user.Name = fb.Name
-		user.Gender = fb.Gender
+		user.InitWithFb(newUserData.(models.FacebookData))
 	case models.GoogleData:
-		beego.Warn("Need to implement")
+		user.InitWithGg(newUserData.(models.GoogleData))
 	default:
 		beego.Error("Not known social net name")
 	}
@@ -70,6 +63,7 @@ func (this *User) SignUpProcess() {
 	}
 	newUserData := this.GetSession("newUserData")
 	if newUserData == nil {
+		beego.Error("User.SignUpProcess no newUserData")
 		return
 	}
 	var err error
@@ -77,13 +71,14 @@ func (this *User) SignUpProcess() {
 	// assign Social data to user
 	switch newUserData.(type) {
 	case models.FacebookData:
-		user.FacebookData = newUserData.(models.FacebookData)
+		user.InitWithFb(newUserData.(models.FacebookData))
 	case models.GoogleData:
-		user.GoogleData = newUserData.(models.GoogleData)
+		user.InitWithGg(newUserData.(models.GoogleData))
 	default:
 		beego.Error("newUserData unkown type")
 		return
 	}
+
 	this.TplNames = "user/signup.tpl"
 
 	formMap := this.Ctx.Request.PostForm
@@ -91,8 +86,8 @@ func (this *User) SignUpProcess() {
 	if user.Locale != "" {
 		user.Locale = this.Lang
 	}
+
 	user.UserName = formMap["username"][0]
-	user.SetName(formMap["first_name"][0], formMap["last_name"][0])
 	user.FirstName = formMap["first_name"][0]
 	user.LastName = formMap["last_name"][0]
 	user.Email = formMap["email"][0]
@@ -107,20 +102,23 @@ func (this *User) SignUpProcess() {
 	// check if username is free
 	var existentUser models.User
 	err = models.DocFindOne(bson.M{"username": user.UserName}, bson.M{"username": 1}, &existentUser, 0)
-	if err != nil || err != models.DocNotFound {
+	if err != nil && err != models.DocNotFound {
 		beego.Error("User.SignUpProcess", err)
 		this.Abort("500")
 	}
-	check("User.SignUpProcess DocFindOne ", err)
+
 	if existentUser.UserName != "" {
 		vErrors := make(models.ValidationErrors)
-		vErrors.Set("username", "This Username is already taken")
+		vErrors.Set("username", []string{"This Username is already taken"})
 		this.Data["ValidationErrors"] = vErrors
 		return
 	}
 
 	vErrors, err := models.DocCreate(&user)
-	panicOnErr(err)
+	if err != nil {
+		beego.Error("User.SignUpProcess DocCreate ", err)
+		this.Abort("500")
+	}
 
 	if vErrors != nil {
 		this.Data["ValidationErrors"] = vErrors

@@ -19,7 +19,7 @@ func init() {
 	beego.Router("/"+ctrls.FoodService{}.Slug()+"/:slug", &ctrls.FoodService{})
 	beego.Router("/login/?:socialNet", &ctrls.Auth{}, "get:Login")
 	beego.Router("/logout", &ctrls.Auth{}, "get:Logout")
-	beego.Router("/auth", &ctrls.Auth{}, "*:Authorize")
+	beego.Router("/auth/?:socialNet", &ctrls.Auth{}, "*:Authorize")
 	beego.Router("/user/:id", &ctrls.User{})
 	beego.Router("/signup", &ctrls.User{}, "get:SignUp;post:SignUpProcess")
 	beego.Router("/", &ctrls.Home{})

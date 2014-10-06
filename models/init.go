@@ -11,6 +11,8 @@ import (
 	_ "github.com/astaxie/beego/cache/redis"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"reflect"
+	"regexp"
 )
 
 // connection
@@ -33,7 +35,7 @@ type DocModel interface {
 	GetIndex() []mgo.Index
 	FmtFields()
 	SetDefaults()
-	Validate() (ValidationErrors, error)
+	Validate(bs bson.M) ValidationErrors
 	GetLocation() Geo
 }
 
@@ -67,6 +69,9 @@ type Near struct {
 	Ok      float32
 }
 
+// validator func type
+type ValidatorFunc func(val interface{}) (string, bool)
+
 func check(s string, e error) bool {
 	if e != nil {
 		beego.Error(s + e.Error())
@@ -81,13 +86,156 @@ func panicOnErr(e error) {
 	}
 }
 
-func (v *ValidationErrors) Set(key, str string) {
+// @todo embeded structs should be added bson and field dictionaries should
+func BsonToFieldDic(d DocModel) map[string]string {
+	m := make(map[string]string)
+	// should be pointer here
+	s := reflect.ValueOf(d).Elem()
+	typeOfT := s.Type()
+	for i := 0; i < s.NumField(); i++ {
+		f := typeOfT.Field(i)
+		key := f.Tag.Get("bson")
+		key = strings.Replace(key, " ", "", -1)
+		key = strings.Split(key, ",")[0]
+		m[key] = f.Name
+	}
+	return m
+}
+
+func FieldToBsonDic(d DocModel) map[string]string {
+	m := make(map[string]string)
+	// should be pointer here
+	s := reflect.ValueOf(d).Elem()
+	typeOfT := s.Type()
+	for i := 0; i < s.NumField(); i++ {
+		f := typeOfT.Field(i)
+		v := f.Tag.Get("bson")
+		v = strings.Replace(v, " ", "", -1)
+		v = strings.Split(v, ",")[0]
+		m[f.Name] = v
+	}
+
+	return m
+
+}
+
+func AndSet(val interface{}, tfs []ValidatorFunc) []string {
+	var msgs []string
+	// first fn should be Required func
+	// if it return true continue validation
+	if len(tfs) == 0 {
+		return msgs
+	}
+	_, ok := tfs[0](val)
+	if !ok {
+		return msgs
+	}
+
+	for i := 1; i < len(tfs); i++ {
+		msg, ok := tfs[i](val)
+		if !ok {
+			msgs = append(msgs, msg)
+		}
+	}
+	return msgs
+}
+
+func (v *ValidationErrors) Set(key string, ss []string) {
+	if len(ss) == 0 {
+		return
+	}
 	vErrors := *v
 	if len(vErrors) == 0 {
 		vErrors = make(map[string][]string)
 	}
-	vErrors[key] = append(vErrors[key], str)
+	vErrors[key] = ss
 	*v = vErrors
+}
+
+// validation functions
+func Required(b bool) ValidatorFunc {
+	return func(val interface{}) (string, bool) {
+		if b == true {
+			return "", true
+		} else {
+			isR := false
+			switch val.(type) {
+			case string:
+				if val.(string) != "" {
+					isR = true
+				}
+			case int:
+				if val.(int) != 0 {
+					isR = true
+				}
+			}
+			if isR {
+				return "", true
+			} else {
+				return "", false
+			}
+		}
+	}
+}
+
+func MinInt(min int, msg string) ValidatorFunc {
+	return func(val interface{}) (string, bool) {
+		if val.(int) >= min {
+			return "", true
+		}
+		return msg, false
+	}
+}
+
+func RangeStr(min, max int, msg string) ValidatorFunc {
+	return func(val interface{}) (string, bool) {
+		l := len(val.(string))
+		if l >= min && l <= max {
+			return "", true
+		}
+		return msg, false
+	}
+}
+
+func NotEmptyStr(msg string) ValidatorFunc {
+	return func(val interface{}) (string, bool) {
+		if val.(string) != "" {
+			return "", true
+		}
+		return msg, false
+	}
+}
+
+func InSetStr(ss []string, msg string) ValidatorFunc {
+	return func(val interface{}) (string, bool) {
+		for _, v := range ss {
+			if val.(string) == v {
+				return "", true
+			}
+		}
+		return msg, false
+	}
+}
+
+func ValidEmail(msg string) ValidatorFunc {
+	emailPattern := regexp.MustCompile("[\\w!#$%&'*+/=?^_`{|}~-]+(?:\\.[\\w!#$%&'*+/=?^_`{|}~-]+)*@(?:[\\w](?:[\\w-]*[\\w])?\\.)+[a-zA-Z0-9](?:[\\w-]*[\\w])?")
+	return func(val interface{}) (string, bool) {
+		if emailPattern.MatchString(val.(string)) {
+			return "", true
+		}
+		return msg, false
+	}
+}
+
+func NotContainStr(ss []string, msg string) ValidatorFunc {
+	return func(val interface{}) (string, bool) {
+		for _, v := range ss {
+			if strings.Index(val.(string), v) != -1 {
+				return msg, false
+			}
+		}
+		return "", true
+	}
 }
 
 // fmt field helper
@@ -119,18 +267,26 @@ func InitConnection() {
 	// import to pkg scope
 	MgoSession = session
 
+	// all models
+	var user User
+	var foodService FoodService
+	// define maps bsonToUser and userToBson field names
+	UserFieldToBsonDic = FieldToBsonDic(&user)
+	UserBsonToFieldDic = BsonToFieldDic(&user)
+
 	// init indexes of models and panic if something wrong
-	err = DocInitIndex(&FoodService{})
+	err = DocInitIndex(&foodService)
 	panicOnErr(err)
-	err = DocInitIndex(&User{})
+	err = DocInitIndex(&user)
 	panicOnErr(err)
 	// check new cache
 	panicOnErr(errCache)
 
 	// register Model structs for gob encoding
-	gob.Register(User{})
-	gob.Register(FoodService{})
+	gob.Register(user)
+	gob.Register(foodService)
 	gob.Register(FacebookData{})
+	gob.Register(GoogleData{})
 
 }
 
@@ -284,9 +440,10 @@ func DocCountDistinct(m DocModel, match bson.M, category string, data interface{
 }
 
 func DocCreate(m DocModel) (ValidationErrors, error) {
+	var err error
 	// validate model before inserting
-	vErrors, err := m.Validate()
-	if err != nil || vErrors != nil {
+	vErrors := m.Validate(bson.M{})
+	if vErrors != nil {
 		return vErrors, err
 	}
 
@@ -303,10 +460,11 @@ func DocCreate(m DocModel) (ValidationErrors, error) {
 	return vErrors, err
 }
 
-func DocUpdate(q bson.M, m DocModel) (ValidationErrors, error) {
+func DocUpdate(q bson.M, m DocModel, flds bson.M) (ValidationErrors, error) {
+	var err error
 	// validate model before inserting
-	vErrors, err := m.Validate()
-	if err != nil || vErrors != nil {
+	vErrors := m.Validate(flds)
+	if vErrors != nil {
 		return vErrors, err
 	}
 
@@ -318,7 +476,8 @@ func DocUpdate(q bson.M, m DocModel) (ValidationErrors, error) {
 	m.SetDefaults()
 
 	collection := sess.DB(MongoDbName).C(m.GetC())
-	err = collection.Update(q, m)
+	// update fields with $set
+	err = collection.Update(q, bson.M{"$set": flds})
 
 	return vErrors, err
 

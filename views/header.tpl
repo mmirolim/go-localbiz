@@ -1,4 +1,4 @@
 Navigation should be here
-<a href="/">Home</a>
-<a href="/login">Login</a>
-<a href="/logout">Logout</a>
+<a href="http://yalp.go">Home</a>
+<a href="http://yalp.go/login">Login</a>
+<a href="http://yalp.go/logout">Logout</a>

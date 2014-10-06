@@ -3,13 +3,14 @@ package models
 import (
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	"regexp"
+	"reflect"
 	"strings"
 	"time"
 )
 
 // roles admin = 1, editor = 2, tester = 3, client = 4, user = 5
 const (
+
 	// roles
 	_ = iota
 	roleAdmin
@@ -20,6 +21,9 @@ const (
 )
 
 var (
+	// define bson field name to struct fields map
+	UserBsonToFieldDic, UserFieldToBsonDic map[string]string
+
 	// define indexes
 	userIndexes = []mgo.Index{
 		mgo.Index{
@@ -93,7 +97,32 @@ type FacebookData struct {
 }
 
 type GoogleData struct {
-	Id string `bson:"id" json:"id"`
+	Id         string `bson:"id" json:"id"`
+	ObjectType string `bson:"objectType" json:"objectType"`
+	Kind       string `bson:"kind" json:"kind"`
+	Etag       string `bson:"etag" json:"etag"`
+	PlaceLived struct {
+		Value   string `bson:"value" json:"value"`
+		Primary bool   `bson:"primary" json:"primary"`
+	}
+	DisplayName string `bson:"displayName" json:"displayName'`
+	Url         string `bson:"url" json:"url"`
+	Name        struct {
+		FamilyName string `bson:"familyName" json:"familyName"`
+		GivenName  string `bson:"givenName: json:"givenName"`
+	} `bson:"name" json:"name"`
+	Image struct {
+		Url       string `bson:"url" json:"url"`
+		IsDefault bool   `bson:"isDefault" json:"isDefault"`
+	} `bson:"image" json:"image"`
+	FirstName   string `bson:"first_name" json:"first_name"`
+	LastName    string `bson:"last_name" json:"last_name"`
+	Gender      string `bson:"gender" json:"gender"`
+	UserName    string `bson:"username" json:"username`
+	Lang        string `bson:"language" json:"language"`
+	isPlusUser  string `bosn:"is_plus_user" json:"isPlusUser"`
+	Verified    bool   `bson:"verified" json:"verified"`
+	AccessToken string `bson:"access_token"`
 }
 
 //@todo fix validation for email now requiring
@@ -133,6 +162,7 @@ func (u User) GetIndex() []mgo.Index {
 func (u User) GetLocation() Geo {
 	return u.Geo
 }
+
 func (u *User) FmtFields() {
 	//@todo create helper fmt function to pass func name to run on argument
 	actions := []string{"ToLower", "TrimSpace"}
@@ -145,6 +175,28 @@ func (u *User) FmtFields() {
 	u.City = FmtString(u.City, actions)
 
 }
+
+func (u *User) InitWithFb(fb FacebookData) {
+	u.FacebookData = fb
+	u.UserName = fb.UserName
+	u.FirstName = fb.FirstName
+	u.LastName = fb.LastName
+	u.Locale = strings.ToLower(fb.Locale)
+	u.Name = fb.Name
+	u.Gender = fb.Gender
+}
+
+func (u *User) InitWithGg(gg GoogleData) {
+	u.GoogleData = gg
+	u.FirstName = gg.Name.GivenName
+	u.LastName = gg.Name.FamilyName
+	u.SetName(u.FirstName, u.LastName)
+	u.Gender = gg.Gender
+	if gg.PlaceLived.Value != "" {
+		u.City = strings.ToLower(gg.PlaceLived.Value)
+	}
+}
+
 func (u *User) SetDefaults() {
 
 	u.UpdatedAt = time.Now()
@@ -166,37 +218,54 @@ func (u *User) SetName(firstName, lastName string) {
 
 // validate field of DocModel
 //@todo all msg should be translatable
-func (u *User) Validate() (ValidationErrors, error) {
-	var err error
+func (u *User) Validate(bs bson.M) ValidationErrors {
 	var vErrors ValidationErrors
+	// validation constraints by fields name
+	var ValidatorList = map[string][]ValidatorFunc{
+		"UserName": []ValidatorFunc{
+			Required(true),
+			NotEmptyStr("should not be empty"),
+			RangeStr(2, 100, "should be 2-100 character long"),
+			NotContainStr([]string{"admin", " "}, "should not contain admin or spaces")},
+		"FirstName": []ValidatorFunc{
+			Required(true),
+			NotEmptyStr("should not be empty"),
+			RangeStr(2, 100, "should be 2-100 character long")},
+		"LastName": []ValidatorFunc{
+			Required(true),
+			NotEmptyStr("should not be empty"),
+			RangeStr(2, 100, "should be 2-100 character long")},
+		"Email": []ValidatorFunc{
+			Required(false),
+			ValidEmail("should be valid email address")},
+		"Gender": []ValidatorFunc{
+			Required(false),
+			InSetStr([]string{"male", "female"}, "should be on from the set")},
+	}
+	// validate all fields if bson.M empty else only provided fields
+	if len(bs) == 0 {
+		s := reflect.ValueOf(u).Elem()
+		typeOfT := s.Type()
+		for i := 0; i < s.NumField(); i++ {
+			f := s.Field(i)
+			fieldName := typeOfT.Field(i).Name
+			// check if validation rule for field exists
+			vFns, ok := ValidatorList[fieldName]
+			if ok {
+				vErrors.Set(fieldName, AndSet(f.Interface(), vFns))
+			}
+		}
 
-	emailPattern := regexp.MustCompile("[\\w!#$%&'*+/=?^_`{|}~-]+(?:\\.[\\w!#$%&'*+/=?^_`{|}~-]+)*@(?:[\\w](?:[\\w-]*[\\w])?\\.)+[a-zA-Z0-9](?:[\\w-]*[\\w])?")
-
-	// username is required
-	if u.UserName == "" {
-		vErrors.Set("username", "Username required")
-	}
-	if u.UserName != "" && strings.Index(u.UserName, " ") != -1 {
-		vErrors.Set("username", "Username can't contain spaces")
-	}
-	//@todo maybe make regex
-	if strings.Index(u.UserName, "admin") != -1 && u.Role != roleAdmin {
-		vErrors.Set("username", "Username can't contain 'admin'")
+	} else {
+		for k, v := range bs {
+			// check if validation rule exists
+			fName := UserBsonToFieldDic[k]
+			vFns, ok := ValidatorList[fName]
+			if ok {
+				vErrors.Set(fName, AndSet(v, vFns))
+			}
+		}
 	}
 
-	if len(u.UserName) < 2 || len(u.UserName) > 100 {
-		vErrors.Set("username", "Username should be 2-100 character long")
-	}
-	if u.FirstName == "" || len(u.FirstName) < 2 || len(u.FirstName) > 100 {
-		vErrors.Set("first_name", "First name required and should be 2-100 character long")
-	}
-	if u.LastName == "" || len(u.LastName) < 2 || len(u.LastName) > 100 {
-		vErrors.Set("last_name", "Last name required and should be 2-100 character long")
-	}
-	// email not required but should validate if entered
-	if u.Email != "" && !emailPattern.MatchString(u.Email) {
-		vErrors.Set("email", "Email must be a valid email address")
-	}
-
-	return vErrors, err
+	return vErrors
 }

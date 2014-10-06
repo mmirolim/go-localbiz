@@ -22,7 +22,7 @@ const (
 var facebookConf, errFb = oauth2.NewConfig(&oauth2.Options{
 	ClientID:     "892068490806056",
 	ClientSecret: "194a38221d6b5b2313149b3b3510b60d",
-	RedirectURL:  "http://yalp.go/auth",
+	RedirectURL:  "http://yalp.go/auth/" + facebook,
 },
 	"https://www.facebook.com/dialog/oauth",
 	"https://graph.facebook.com/oauth/access_token")
@@ -30,7 +30,7 @@ var facebookConf, errFb = oauth2.NewConfig(&oauth2.Options{
 var googleConf, errG = oauth2.NewConfig(&oauth2.Options{
 	ClientID:     "924835338434-u4osuetj2bm4j67r60g0vjur080reb97.apps.googleusercontent.com",
 	ClientSecret: "DxC13zzfLWDV0TiqEMKrzkW4",
-	RedirectURL:  "http://192.168.1.107.xip.io/auth",
+	RedirectURL:  "http://192.168.1.107.xip.io/auth/" + google,
 	Scopes:       []string{"openid", "profile"},
 },
 	"https://accounts.google.com/o/oauth2/auth",
@@ -83,31 +83,51 @@ func (this *Auth) Logout() {
 func (this *Auth) Authorize() {
 	this.EnableRender = false
 	//@todo add msg to what was wrong
+	socialNet := this.Ctx.Input.Param(":socialNet")
 	// confirm identity
 	code := this.Input().Get("code")
-	if code == "" {
+	if code == "" || socialNet == "" {
 		this.Ctx.Redirect(302, "/")
 		return
 	}
+	// declare var required for oauth providers
+	var providerConf *oauth2.Config
+	var userInfoUrl string
+	var userData interface{}
+	var userFbData models.FacebookData
+	var userGgData models.GoogleData
+	switch socialNet {
+	case facebook:
+		userData = &userFbData
+		providerConf = facebookConf
+		userInfoUrl = "https://graph.facebook.com/me"
+	case google:
+		userData = &userGgData
+		providerConf = googleConf
+		userInfoUrl = "https://www.googleapis.com/plus/v1/people/me"
+	default:
+		this.Abort("400")
+	}
 	// exchange code to access token
-	token, err := facebookConf.Exchange(code)
+	token, err := providerConf.Exchange(code)
 	if err != nil {
 		this.Redirect("/", 302)
 		return
 	}
 	// get public information
-	t := facebookConf.NewTransport()
+	t := providerConf.NewTransport()
 	t.SetToken(token)
 	client := http.Client{Transport: t}
-	resp, err := client.Get("https://graph.facebook.com/me")
+	resp, err := client.Get(userInfoUrl)
 	defer resp.Body.Close()
+
 	if err != nil {
 		beego.Warn(err)
 		this.Redirect("/", 302)
 		return
 	}
-	var userFbData models.FacebookData
-	err = json.NewDecoder(resp.Body).Decode(&userFbData)
+
+	err = json.NewDecoder(resp.Body).Decode(userData)
 	if err != nil {
 		beego.Error(err)
 		this.Redirect("/", 302)
@@ -115,7 +135,20 @@ func (this *Auth) Authorize() {
 	}
 
 	var user models.User
-	err = models.DocFindOne(bson.M{"fb_data.id": userFbData.Id}, bson.M{}, &user, 0)
+	var socialId bson.M
+	// search by social id
+	switch userData.(type) {
+	case *models.FacebookData:
+		socialId = bson.M{"fb_data.id": userData.(*models.FacebookData).Id}
+		// get value and typecast to proper data type
+		this.SetSession("newUserData", *userData.(*models.FacebookData))
+	case *models.GoogleData:
+		socialId = bson.M{"gg_data.id": userData.(*models.GoogleData).Id}
+		this.SetSession("newUserData", *userData.(*models.GoogleData))
+	default:
+		beego.Error("userData type unkown")
+	}
+	err = models.DocFindOne(socialId, bson.M{}, &user, 0)
 	if err != nil && err != models.DocNotFound {
 		beego.Error(err)
 		this.Redirect("/login", 302)
@@ -123,15 +156,24 @@ func (this *Auth) Authorize() {
 	}
 	if err == models.DocNotFound {
 		// this should be new user
-		this.SetSession("newUserData", userFbData)
 		this.Redirect("/signup", 302)
 		return
 	} else {
-		user.LastLoginAt = time.Now()
-		vErrors, err := models.DocUpdate(bson.M{"_id": user.Id}, &user)
+		// delete newUserData if existent user
+		this.DelSession("newUserData")
+		// update last login
+		userId, ok1 := models.UserFieldToBsonDic["Id"]
+		lastLogin, ok2 := models.UserFieldToBsonDic["LastLoginAt"]
+		if !ok1 || !ok2 {
+			beego.Error("Auth.Authorize UserFieldToBsonDic missing term")
+			this.Abort("500")
+		}
+		q := bson.M{userId: user.Id}
+		fld := bson.M{lastLogin: time.Now()}
+		vErrors, err := models.DocUpdate(q, &user, fld)
 		//@todo handle login error properly with messages
 		if err != nil {
-			beego.Error(err)
+			beego.Error("Auth.Authorize DocUpdate ", err)
 			this.Redirect("/login", 302)
 			return
 		}
