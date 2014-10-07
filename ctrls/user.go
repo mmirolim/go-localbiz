@@ -108,13 +108,14 @@ func (this *User) SignUpProcess() {
 	}
 
 	if existentUser.UserName != "" {
-		vErrors := make(models.ValidationErrors)
-		vErrors.Set("username", []string{"This Username is already taken"})
+		vErrors := make(models.VErrors)
+		vErrors.Set(models.FieldDic["User"]["FieldBson"]["UserName"], []models.VMsg{models.VMsg{"valid_username_taken", map[string]interface{}{}}})
 		this.Data["ValidationErrors"] = vErrors
 		return
 	}
 
 	vErrors, err := models.DocCreate(&user)
+	beego.Warn(vErrors)
 	if err != nil {
 		beego.Error("User.SignUpProcess DocCreate ", err)
 		this.Abort("500")

@@ -125,6 +125,7 @@ type GoogleData struct {
 	AccessToken string `bson:"access_token"`
 }
 
+// @important  if Field naming changes validation also should be changed
 //@todo fix validation for email now requiring
 type User struct {
 	Id           bson.ObjectId `bson:"_id,omitempty" json:"id,omitempty"`
@@ -218,29 +219,29 @@ func (u *User) SetName(firstName, lastName string) {
 
 // validate field of DocModel
 //@todo all msg should be translatable
-func (u *User) Validate(bs bson.M) ValidationErrors {
-	var vErrors ValidationErrors
+func (u *User) Validate(bs bson.M) VErrors {
+	var vErrors VErrors
 	// validation constraints by fields name
-	var ValidatorList = map[string][]ValidatorFunc{
-		"UserName": []ValidatorFunc{
+	var ValidatorList = map[string][]VFunc{
+		"UserName": []VFunc{
 			Required(true),
-			NotEmptyStr("should not be empty"),
-			RangeStr(2, 100, "should be 2-100 character long"),
-			NotContainStr([]string{"admin", " "}, "should not contain admin or spaces")},
-		"FirstName": []ValidatorFunc{
+			NotEmptyStr(),
+			RangeStr(2, 100),
+			NotContainStr([]string{"admin", " "})},
+		"FirstName": []VFunc{
 			Required(true),
-			NotEmptyStr("should not be empty"),
-			RangeStr(2, 100, "should be 2-100 character long")},
-		"LastName": []ValidatorFunc{
+			NotEmptyStr(),
+			RangeStr(2, 100)},
+		"LastName": []VFunc{
 			Required(true),
-			NotEmptyStr("should not be empty"),
-			RangeStr(2, 100, "should be 2-100 character long")},
-		"Email": []ValidatorFunc{
+			NotEmptyStr(),
+			RangeStr(2, 100)},
+		"Email": []VFunc{
 			Required(false),
-			ValidEmail("should be valid email address")},
-		"Gender": []ValidatorFunc{
+			ValidEmail()},
+		"Gender": []VFunc{
 			Required(false),
-			InSetStr([]string{"male", "female"}, "should be on from the set")},
+			InSetStr([]string{"male", "female"})},
 	}
 	// validate all fields if bson.M empty else only provided fields
 	if len(bs) == 0 {

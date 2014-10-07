@@ -16,5 +16,9 @@
             "one": "Greetings {{ .Person }}!",
             "other": "Greetings my friends!"
         }
+    },
+    {
+        "id": "valid_not_empty",
+        "translation": "{{ .Field }} should not be empty"
     }
 ]

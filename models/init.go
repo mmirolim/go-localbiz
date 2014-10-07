@@ -24,7 +24,16 @@ var (
 	Cache, errCache = cache.NewCache("redis", `{"conn":":6379"}`)
 	cachePrefix     = beego.AppConfig.String("cache::prefix")
 	DocNotFound     = mgo.ErrNotFound
+	FieldDic        map[string]map[string]map[string]string
 )
+
+// convenience map for i18n translation parameters map
+type tm map[string]interface{}
+
+type VMsg struct {
+	Msg   string
+	Param tm
+}
 
 type BsonData struct {
 	Raw bson.Raw
@@ -35,11 +44,11 @@ type DocModel interface {
 	GetIndex() []mgo.Index
 	FmtFields()
 	SetDefaults()
-	Validate(bs bson.M) ValidationErrors
+	Validate(bs bson.M) VErrors
 	GetLocation() Geo
 }
 
-type ValidationErrors map[string][]string
+type VErrors map[string][]VMsg
 
 // define model structs
 type Geo struct {
@@ -70,7 +79,7 @@ type Near struct {
 }
 
 // validator func type
-type ValidatorFunc func(val interface{}) (string, bool)
+type VFunc func(val interface{}) (VMsg, bool)
 
 func check(s string, e error) bool {
 	if e != nil {
@@ -87,7 +96,7 @@ func panicOnErr(e error) {
 }
 
 // @todo embeded structs should be added bson and field dictionaries should
-func BsonToFieldDic(d DocModel) map[string]string {
+func BsonFieldDic(d DocModel) map[string]string {
 	m := make(map[string]string)
 	// should be pointer here
 	s := reflect.ValueOf(d).Elem()
@@ -102,7 +111,7 @@ func BsonToFieldDic(d DocModel) map[string]string {
 	return m
 }
 
-func FieldToBsonDic(d DocModel) map[string]string {
+func FieldBsonDic(d DocModel) map[string]string {
 	m := make(map[string]string)
 	// should be pointer here
 	s := reflect.ValueOf(d).Elem()
@@ -119,8 +128,8 @@ func FieldToBsonDic(d DocModel) map[string]string {
 
 }
 
-func AndSet(val interface{}, tfs []ValidatorFunc) []string {
-	var msgs []string
+func AndSet(val interface{}, tfs []VFunc) []VMsg {
+	var msgs []VMsg
 	// first fn should be Required func
 	// if it return true continue validation
 	if len(tfs) == 0 {
@@ -140,23 +149,24 @@ func AndSet(val interface{}, tfs []ValidatorFunc) []string {
 	return msgs
 }
 
-func (v *ValidationErrors) Set(key string, ss []string) {
+func (v *VErrors) Set(key string, ss []VMsg) {
 	if len(ss) == 0 {
 		return
 	}
 	vErrors := *v
 	if len(vErrors) == 0 {
-		vErrors = make(map[string][]string)
+		vErrors = make(map[string][]VMsg)
 	}
 	vErrors[key] = ss
 	*v = vErrors
 }
 
 // validation functions
-func Required(b bool) ValidatorFunc {
-	return func(val interface{}) (string, bool) {
+func Required(b bool) VFunc {
+	return func(val interface{}) (VMsg, bool) {
+		var vm VMsg
 		if b == true {
-			return "", true
+			return vm, true
 		} else {
 			isR := false
 			switch val.(type) {
@@ -170,71 +180,87 @@ func Required(b bool) ValidatorFunc {
 				}
 			}
 			if isR {
-				return "", true
+				return vm, true
 			} else {
-				return "", false
+				return vm, false
 			}
 		}
 	}
 }
 
-func MinInt(min int, msg string) ValidatorFunc {
-	return func(val interface{}) (string, bool) {
+func MinInt(min int) VFunc {
+	return func(val interface{}) (VMsg, bool) {
+		var vm VMsg
 		if val.(int) >= min {
-			return "", true
+			return vm, true
 		}
-		return msg, false
+		vm.Msg = "valid_min"
+		vm.Param = tm{"Min": min}
+		return vm, false
 	}
 }
 
-func RangeStr(min, max int, msg string) ValidatorFunc {
-	return func(val interface{}) (string, bool) {
+func RangeStr(min, max int) VFunc {
+	return func(val interface{}) (VMsg, bool) {
+		var vm VMsg
 		l := len(val.(string))
 		if l >= min && l <= max {
-			return "", true
+			return vm, true
 		}
-		return msg, false
+		vm.Msg = "valid_range"
+		vm.Param = tm{"Min": min, "Max": max}
+		return vm, false
 	}
 }
 
-func NotEmptyStr(msg string) ValidatorFunc {
-	return func(val interface{}) (string, bool) {
+func NotEmptyStr() VFunc {
+	return func(val interface{}) (VMsg, bool) {
+		var vm VMsg
 		if val.(string) != "" {
-			return "", true
+			return vm, true
 		}
-		return msg, false
+		vm.Msg = "valid_not_empty"
+		return vm, false
 	}
 }
 
-func InSetStr(ss []string, msg string) ValidatorFunc {
-	return func(val interface{}) (string, bool) {
+func InSetStr(ss []string) VFunc {
+	return func(val interface{}) (VMsg, bool) {
+		var vm VMsg
 		for _, v := range ss {
 			if val.(string) == v {
-				return "", true
+				return vm, true
 			}
 		}
-		return msg, false
+		vm.Msg = "valid_set"
+		vm.Param = tm{"Set": strings.Join(ss, ", ")}
+		return vm, false
 	}
 }
 
-func ValidEmail(msg string) ValidatorFunc {
+func ValidEmail() VFunc {
 	emailPattern := regexp.MustCompile("[\\w!#$%&'*+/=?^_`{|}~-]+(?:\\.[\\w!#$%&'*+/=?^_`{|}~-]+)*@(?:[\\w](?:[\\w-]*[\\w])?\\.)+[a-zA-Z0-9](?:[\\w-]*[\\w])?")
-	return func(val interface{}) (string, bool) {
+	return func(val interface{}) (VMsg, bool) {
+		var vm VMsg
 		if emailPattern.MatchString(val.(string)) {
-			return "", true
+			return vm, true
 		}
-		return msg, false
+		vm.Msg = "valid_email"
+		return vm, false
 	}
 }
 
-func NotContainStr(ss []string, msg string) ValidatorFunc {
-	return func(val interface{}) (string, bool) {
+func NotContainStr(ss []string) VFunc {
+	return func(val interface{}) (VMsg, bool) {
+		var vm VMsg
 		for _, v := range ss {
 			if strings.Index(val.(string), v) != -1 {
-				return msg, false
+				vm.Msg = "valid_not_contain"
+				vm.Param = tm{"Set": strings.Join(ss, ", ")}
+				return vm, false
 			}
 		}
-		return "", true
+		return vm, true
 	}
 }
 
@@ -270,9 +296,11 @@ func InitConnection() {
 	// all models
 	var user User
 	var foodService FoodService
+	FieldDic = make(map[string]map[string]map[string]string)
+	FieldDic["User"] = make(map[string]map[string]string)
 	// define maps bsonToUser and userToBson field names
-	UserFieldToBsonDic = FieldToBsonDic(&user)
-	UserBsonToFieldDic = BsonToFieldDic(&user)
+	FieldDic["User"]["FieldBson"] = FieldBsonDic(&user)
+	FieldDic["User"]["BsonField"] = BsonFieldDic(&user)
 
 	// init indexes of models and panic if something wrong
 	err = DocInitIndex(&foodService)
@@ -439,7 +467,7 @@ func DocCountDistinct(m DocModel, match bson.M, category string, data interface{
 	return err
 }
 
-func DocCreate(m DocModel) (ValidationErrors, error) {
+func DocCreate(m DocModel) (VErrors, error) {
 	var err error
 	// validate model before inserting
 	vErrors := m.Validate(bson.M{})
@@ -460,7 +488,7 @@ func DocCreate(m DocModel) (ValidationErrors, error) {
 	return vErrors, err
 }
 
-func DocUpdate(q bson.M, m DocModel, flds bson.M) (ValidationErrors, error) {
+func DocUpdate(q bson.M, m DocModel, flds bson.M) (VErrors, error) {
 	var err error
 	// validate model before inserting
 	vErrors := m.Validate(flds)
