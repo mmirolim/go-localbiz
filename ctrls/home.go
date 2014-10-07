@@ -17,6 +17,7 @@ func (this *Home) Get() {
 	this.Data["Lang"] = this.Lang
 	this.Data["Title"] = "Yalp.uz"
 	this.Data["Name"] = "My name is Mirolim!"
+	this.Data["Person"] = map[string]interface{}{"Person": "Mirolim"}
 	isAuth := this.GetSession("isAuth")
 	if isAuth != nil {
 		this.Data["isAuth"] = isAuth.(bool)
