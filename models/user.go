@@ -21,8 +21,6 @@ const (
 )
 
 var (
-	// define bson field name to struct fields map
-	UserBsonToFieldDic, UserFieldToBsonDic map[string]string
 
 	// define indexes
 	userIndexes = []mgo.Index{
@@ -260,7 +258,7 @@ func (u *User) Validate(bs bson.M) VErrors {
 	} else {
 		for k, v := range bs {
 			// check if validation rule exists
-			fName := UserBsonToFieldDic[k]
+			fName := FieldDic["User"]["BsonField"][k]
 			vFns, ok := ValidatorList[fName]
 			if ok {
 				vErrors.Set(fName, AndSet(v, vFns))
