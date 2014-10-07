@@ -13,7 +13,11 @@ var (
 	IsPro       bool
 	langTypes   map[string]string
 	defaultLang string
+	Tfn         i18n.TranslateFunc
 )
+
+// convenience type for i18n
+type tm map[string]interface{}
 
 // base router with global settings for all other routers
 type baseController struct {
@@ -96,6 +100,8 @@ func (this *baseController) setLangVer() {
 	acceptLang := strings.ToLower(this.Ctx.Request.Header.Get("Accept-Language"))
 
 	T, err := i18n.Tfunc(urlLang, acceptLang, defaultLang)
+	// set func in controller
+	Tfn = T
 	check("initLocales i18n.Tfunc ", err)
 	// register translation func with langs
 	beego.AddFuncMap("T", T)
