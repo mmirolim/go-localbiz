@@ -64,11 +64,12 @@ func (this *Auth) Login() {
 	}
 	// @todo add csrf tokens as state
 	var urlR string
+	state := this.XsrfToken()
 	switch socialNet {
 	case facebook:
-		urlR = facebookConf.AuthCodeURL("state", "online", "auto")
+		urlR = facebookConf.AuthCodeURL(state, "online", "auto")
 	case google:
-		urlR = googleConf.AuthCodeURL("state", "online", "auto")
+		urlR = googleConf.AuthCodeURL(state, "online", "auto")
 	default:
 		urlR = "/login"
 	}
@@ -85,6 +86,10 @@ func (this *Auth) Authorize() {
 	//@todo add msg to what was wrong
 	socialNet := this.Ctx.Input.Param(":socialNet")
 	// confirm identity
+	state := this.Input().Get("state")
+	if state != this.XsrfToken() {
+		this.Abort("403")
+	}
 	code := this.Input().Get("code")
 	if code == "" || socialNet == "" {
 		this.Ctx.Redirect(302, "/")
