@@ -83,13 +83,13 @@ var (
 )
 
 type FacebookData struct {
-	Id          string `bson:"id" json:"id`
+	Id          string `bson:"id" json:"id"`
 	Link        string `bson:"link" json:"link"`
 	Name        string `bson:"name" json:"name"`
 	FirstName   string `bson:"first_name" json:"first_name"`
 	LastName    string `bson:"last_name" json:"last_name"`
 	Gender      string `bson:"gender" json:"gender"`
-	UserName    string `bson:"username" json:"username`
+	UserName    string `bson:"username" json:"username"`
 	Locale      string `bson:"locale" json:"locale"`
 	AccessToken string `bson:"access_token"`
 }
@@ -103,11 +103,11 @@ type GoogleData struct {
 		Value   string `bson:"value" json:"value"`
 		Primary bool   `bson:"primary" json:"primary"`
 	}
-	DisplayName string `bson:"displayName" json:"displayName'`
+	DisplayName string `bson:"displayName" json:"displayName"`
 	Url         string `bson:"url" json:"url"`
 	Name        struct {
 		FamilyName string `bson:"familyName" json:"familyName"`
-		GivenName  string `bson:"givenName: json:"givenName"`
+		GivenName  string `bson:"givenName" json:"givenName"`
 	} `bson:"name" json:"name"`
 	Image struct {
 		Url       string `bson:"url" json:"url"`
@@ -116,7 +116,7 @@ type GoogleData struct {
 	FirstName   string `bson:"first_name" json:"first_name"`
 	LastName    string `bson:"last_name" json:"last_name"`
 	Gender      string `bson:"gender" json:"gender"`
-	UserName    string `bson:"username" json:"username`
+	UserName    string `bson:"username" json:"username"`
 	Lang        string `bson:"language" json:"language"`
 	isPlusUser  string `bosn:"is_plus_user" json:"isPlusUser"`
 	Verified    bool   `bson:"verified" json:"verified"`
@@ -139,9 +139,9 @@ type User struct {
 	Role         int           `bson:"role" json:"role"`
 	Bday         time.Time     `bson:"bday,omitempty" json:"bday,omitempty"`
 	FacebookData `bson:"fb_data" json:"fb_data"`
-	GoogleData   `bson"gg_data" json:"gg_data"`
+	GoogleData   `bson:"gg_data" json:"gg_data"`
 	Address      `bson:"address" json:"address"`
-	Geo          `bson:"loc,omitempty" json:"loc,omitempty`
+	Geo          `bson:"loc,omitempty" json:"loc,omitempty"`
 	Deleted      bool      `bson:"deleted" json:"deleted"`
 	UpdatedAt    time.Time `bson:"updated_at" json:"updated_at"`
 	CreatedAt    time.Time `bson:"created_at" json:"created_at"`
