@@ -109,7 +109,7 @@ func (this *User) SignUpProcess() {
 
 	if existentUser.UserName != "" {
 		vErrors := make(models.VErrors)
-		vErrors.Set(models.FieldDic["User"]["FieldBson"]["UserName"], []models.VMsg{models.VMsg{"valid_username_taken", map[string]interface{}{}}})
+		vErrors.Set(models.User{}.Bson("UserName"), models.VMsg{"valid_username_taken", map[string]string{}})
 		this.Data["ValidationErrors"] = vErrors
 		return
 	}
@@ -122,7 +122,20 @@ func (this *User) SignUpProcess() {
 	}
 
 	if vErrors != nil {
-		this.Data["ValidationErrors"] = vErrors
+		verrs := make(map[string][]string)
+		for k, v := range vErrors {
+				for _, vmsg := range v {
+					m := make(map[string]interface {})
+					m["Field"] = T(k)
+					for fld, str := range vmsg.Param {
+						m[fld] = T(str)
+					}
+					msg := T(vmsg.Msg, m)
+					verrs[k] = append(verrs[k], msg)
+				}
+		}
+		beego.Warn(verrs)
+		this.Data["ValidationErrors"] = verrs
 	} else {
 		// clean session
 		this.DelSession("newUserData")

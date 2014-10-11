@@ -16,5 +16,17 @@
             "one": "Добро пожаловать {{ .Person }}!",
             "few": "Всем привет"
         }
+    },
+    {
+        "id": "username",
+        "translation": "логин"
+    },
+    {
+        "id": "valid_required",
+        "translation": "поле {{ .Field }} обязательно для заполнения"
+    },
+    {
+        "id": "valid_min",
+        "translation": "в поле {{ .Field }} должно быть больше {{ .Min }} символов"
     }
 ]

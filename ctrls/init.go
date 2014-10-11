@@ -13,7 +13,7 @@ var (
 	IsPro       bool
 	langTypes   map[string]string
 	defaultLang string
-	Tfn         i18n.TranslateFunc
+	T         i18n.TranslateFunc
 )
 
 // convenience type for i18n
@@ -99,12 +99,12 @@ func (this *baseController) setLangVer() {
 	// Get language info from 'Accept-Language'
 	acceptLang := strings.ToLower(this.Ctx.Request.Header.Get("Accept-Language"))
 
-	T, err := i18n.Tfunc(urlLang, acceptLang, defaultLang)
-	// set func in controller
-	Tfn = T
+	Tfn, err := i18n.Tfunc(urlLang, acceptLang, defaultLang)
+	// set T func in ctrls
+	T = Tfn
 	check("initLocales i18n.Tfunc ", err)
 	// register translation func with langs
-	beego.AddFuncMap("T", T)
+	beego.AddFuncMap("T", Tfn)
 	if langTypes[urlLang] != "" {
 		lang = urlLang
 	} else if langTypes[acceptLang] != "" {

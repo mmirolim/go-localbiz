@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
-
 	"encoding/gob"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/cache"
@@ -12,7 +11,7 @@ import (
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"reflect"
-	"regexp"
+	"github.com/nicksnyder/go-i18n/i18n"
 )
 
 // connection
@@ -25,14 +24,13 @@ var (
 	cachePrefix     = beego.AppConfig.String("cache::prefix")
 	DocNotFound     = mgo.ErrNotFound
 	FieldDic        map[string]map[string]map[string]string
+	T = i18n.IdentityTfunc
 )
 
-// convenience map for i18n translation parameters map
-type tm map[string]interface{}
 
 type VMsg struct {
 	Msg   string
-	Param tm
+	Param map[string]string
 }
 
 type BsonData struct {
@@ -128,140 +126,17 @@ func FieldBsonDic(d DocModel) map[string]string {
 
 }
 
-func AndSet(val interface{}, tfs []VFunc) []VMsg {
-	var msgs []VMsg
-	// first fn should be Required func
-	// if it return true continue validation
-	if len(tfs) == 0 {
-		return msgs
-	}
-	_, ok := tfs[0](val)
-	if !ok {
-		return msgs
-	}
 
-	for i := 1; i < len(tfs); i++ {
-		msg, ok := tfs[i](val)
-		if !ok {
-			msgs = append(msgs, msg)
-		}
-	}
-	return msgs
-}
-
-func (v *VErrors) Set(key string, ss []VMsg) {
-	if len(ss) == 0 {
+func (v *VErrors) Set(key string, msg VMsg) {
+	if msg.Msg == "" {
 		return
 	}
 	vErrors := *v
 	if len(vErrors) == 0 {
 		vErrors = make(map[string][]VMsg)
 	}
-	vErrors[key] = ss
+	vErrors[key] = append(vErrors[key], msg)
 	*v = vErrors
-}
-
-// validation functions
-func Required(b bool) VFunc {
-	return func(val interface{}) (VMsg, bool) {
-		var vm VMsg
-		if b == true {
-			return vm, true
-		} else {
-			isR := false
-			switch val.(type) {
-			case string:
-				if val.(string) != "" {
-					isR = true
-				}
-			case int:
-				if val.(int) != 0 {
-					isR = true
-				}
-			}
-			if isR {
-				return vm, true
-			} else {
-				return vm, false
-			}
-		}
-	}
-}
-
-func MinInt(min int) VFunc {
-	return func(val interface{}) (VMsg, bool) {
-		var vm VMsg
-		if val.(int) >= min {
-			return vm, true
-		}
-		vm.Msg = "valid_min"
-		vm.Param = tm{"Min": min}
-		return vm, false
-	}
-}
-
-func RangeStr(min, max int) VFunc {
-	return func(val interface{}) (VMsg, bool) {
-		var vm VMsg
-		l := len(val.(string))
-		if l >= min && l <= max {
-			return vm, true
-		}
-		vm.Msg = "valid_range"
-		vm.Param = tm{"Min": min, "Max": max}
-		return vm, false
-	}
-}
-
-func NotEmptyStr() VFunc {
-	return func(val interface{}) (VMsg, bool) {
-		var vm VMsg
-		if val.(string) != "" {
-			return vm, true
-		}
-		vm.Msg = "valid_not_empty"
-		return vm, false
-	}
-}
-
-func InSetStr(ss []string) VFunc {
-	return func(val interface{}) (VMsg, bool) {
-		var vm VMsg
-		for _, v := range ss {
-			if val.(string) == v {
-				return vm, true
-			}
-		}
-		vm.Msg = "valid_set"
-		vm.Param = tm{"Set": strings.Join(ss, ", ")}
-		return vm, false
-	}
-}
-
-func ValidEmail() VFunc {
-	emailPattern := regexp.MustCompile("[\\w!#$%&'*+/=?^_`{|}~-]+(?:\\.[\\w!#$%&'*+/=?^_`{|}~-]+)*@(?:[\\w](?:[\\w-]*[\\w])?\\.)+[a-zA-Z0-9](?:[\\w-]*[\\w])?")
-	return func(val interface{}) (VMsg, bool) {
-		var vm VMsg
-		if emailPattern.MatchString(val.(string)) {
-			return vm, true
-		}
-		vm.Msg = "valid_email"
-		return vm, false
-	}
-}
-
-func NotContainStr(ss []string) VFunc {
-	return func(val interface{}) (VMsg, bool) {
-		var vm VMsg
-		for _, v := range ss {
-			if strings.Index(val.(string), v) != -1 {
-				vm.Msg = "valid_not_contain"
-				vm.Param = tm{"Set": strings.Join(ss, ", ")}
-				return vm, false
-			}
-		}
-		return vm, true
-	}
 }
 
 // fmt field helper

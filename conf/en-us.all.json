@@ -18,7 +18,11 @@
         }
     },
     {
-        "id": "valid_not_empty",
+        "id": "valid_required",
         "translation": "{{ .Field }} should not be empty"
+    },
+    {
+        "id": "valid_min",
+        "translation": "{{ .Field }} should be {{ .Min }} character long"
     }
 ]

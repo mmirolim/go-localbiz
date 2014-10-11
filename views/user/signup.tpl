@@ -10,7 +10,7 @@
     </ul>
 </div>
 <div id="form-signup">
-    <form action="/signup" method="post">
+    <form action="/signup[[ if .Lang ]]?lang=[[ .Lang ]] [[ end ]]" method="post">
         First name: <input type="text" name="first_name" value="[[ .User.FirstName ]]"/><br/>
         Last name: <input type="text" name="last_name" value="[[ .User.LastName ]]"/><br/>
         Username: <input type="text" name="username" value="[[ .User.UserName ]]"/><br/>

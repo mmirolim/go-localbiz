@@ -3,9 +3,10 @@ package models
 import (
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	"reflect"
 	"strings"
 	"time"
+	"github.com/astaxie/beego/validation"
+	"github.com/astaxie/beego"
 )
 
 // roles admin = 1, editor = 2, tester = 3, client = 4, user = 5
@@ -214,57 +215,78 @@ func (u *User) SetDefaults() {
 func (u *User) SetName(firstName, lastName string) {
 	u.Name = strings.TrimSpace(firstName) + " " + strings.TrimSpace(lastName)
 }
+// return bson field name from cached FieldDic, convenience func
+func (u User) Bson(f string) string {
+	b, ok := FieldDic["User"]["FieldBson"][f]
+	if !ok {
+		beego.Error("User.Bson key in FieldDic does not exists " + f)
+	}
+
+	return b
+}
+
+func (u User) Field(b string) string {
+	f, ok := FieldDic["User"]["BsonField"][b]
+	if !ok {
+		beego.Error("User.Field key in FieldDic does not exists " + b)
+	}
+	return f
+}
 
 // validate field of DocModel
 //@todo all msg should be translatable
 func (u *User) Validate(bs bson.M) VErrors {
-	var vErrors VErrors
-	// validation constraints by fields name
-	var ValidatorList = map[string][]VFunc{
-		"UserName": []VFunc{
-			Required(true),
-			NotEmptyStr(),
-			RangeStr(2, 100),
-			NotContainStr([]string{"admin", " "})},
-		"FirstName": []VFunc{
-			Required(true),
-			NotEmptyStr(),
-			RangeStr(2, 100)},
-		"LastName": []VFunc{
-			Required(true),
-			NotEmptyStr(),
-			RangeStr(2, 100)},
-		"Email": []VFunc{
-			Required(false),
-			ValidEmail()},
-		"Gender": []VFunc{
-			Required(false),
-			InSetStr([]string{"male", "female"})},
-	}
-	// validate all fields if bson.M empty else only provided fields
-	if len(bs) == 0 {
-		s := reflect.ValueOf(u).Elem()
-		typeOfT := s.Type()
-		for i := 0; i < s.NumField(); i++ {
-			f := s.Field(i)
-			fieldName := typeOfT.Field(i).Name
-			// check if validation rule for field exists
-			vFns, ok := ValidatorList[fieldName]
-			if ok {
-				vErrors.Set(fieldName, AndSet(f.Interface(), vFns))
+	var errs VErrors
+	v := validation.Validation{}
+	// get bson field name
+	b := u.Bson
+
+	f := "UserName"
+	val := u.UserName
+	v.Required(val, b(f)).Message("valid_required")
+	v.MinSize(val, 2, b(f)).Message("valid_min")
+	v.MaxSize(val, 100, b(f)).Message("valid_max")
+	v.Required(val, b(f)).Message("valid_required")
+	v.AlphaDash(val, b(f)).Message("valid_alpha_dash")
+
+	f = "FirstName"
+	val = u.FirstName
+	v.Required(val, b(f)).Message("valid_required")
+	v.MinSize(val, 2, b(f)).Message("valid_min")
+	v.MaxSize(val, 100, b(f)).Message("valid_max")
+
+	f = "LastName"
+	val = u.LastName
+	v.Required(val, b(f)).Message("valid_required")
+	v.MinSize(val, 2, b(f)).Message("valid_min")
+	v.MaxSize(val, 100, b(f)).Message("valid_max")
+
+	f = "Email"
+	val = u.Email
+	v.Email(val, b(f)).Message("valid_email")
+
+	if v.HasErrors() {
+		for _, err := range v.Errors {
+			switch f := err.Key; f {
+			case u.Bson("UserName"):
+				m := make(map[string]string)
+				msg := err.Message
+				switch msg {
+				case "valid_required":
+					errs.Set(f, VMsg{msg, m})
+				case "valid_min":
+					m["Min"] = "2"
+					errs.Set(f, VMsg{msg, m})
+					beego.Warn(T(msg))
+				case "valid_max":
+					m["Max"] = "100"
+					errs.Set(f, VMsg{msg, m})
+				default:
+					errs.Set(f, VMsg{"unknown_message", m})
+				}
+
 			}
 		}
-
-	} else {
-		for k, v := range bs {
-			// check if validation rule exists
-			fName := FieldDic["User"]["BsonField"][k]
-			vFns, ok := ValidatorList[fName]
-			if ok {
-				vErrors.Set(fName, AndSet(v, vFns))
-			}
-		}
 	}
-
-	return vErrors
+	return errs
 }
