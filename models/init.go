@@ -26,6 +26,9 @@ var (
 	DocNotFound     = mgo.ErrNotFound
 	FieldDic        map[string]map[string]map[string]string
 	T               = i18n.IdentityTfunc
+	// regex patters
+	reg_alpha_dash = regexp.MustCompile("[^\\d\\w-_]")
+	reg_email      = regexp.MustCompile("[\\w!#$%&'*+/=?^_`{|}~-]+(?:\\.[\\w!#$%&'*+/=?^_`{|}~-]+)*@(?:[\\w](?:[\\w-]*[\\w])?\\.)+[a-zA-Z0-9](?:[\\w-]*[\\w])?")
 )
 
 type VMsg struct {
@@ -165,8 +168,7 @@ func (v *Validator) Required(p interface{}, k string) {
 }
 
 func (v *Validator) AlphaDash(p, k string) {
-	pattern := regexp.MustCompile("[^\\d\\w-_]")
-	if !pattern.MatchString(p) {
+	if !reg_alpha_dash.MatchString(p) {
 		v.Errors.Set(k, VMsg{Msg: "valid_alpha_dash", Params: map[string]interface{}{"Filed": k}})
 	}
 }
@@ -178,8 +180,7 @@ func (v *Validator) Size(p, k string, min, max int) {
 }
 
 func (v *Validator) Email(p, k string) {
-	pattern := regexp.MustCompile("[\\w!#$%&'*+/=?^_`{|}~-]+(?:\\.[\\w!#$%&'*+/=?^_`{|}~-]+)*@(?:[\\w](?:[\\w-]*[\\w])?\\.)+[a-zA-Z0-9](?:[\\w-]*[\\w])?")
-	if !pattern.MatchString(p) {
+	if !reg_email.MatchString(p) {
 		v.Errors.Set(k, VMsg{Msg: "valid_email", Params: map[string]interface{}{"Field": k}})
 	}
 }

@@ -254,6 +254,7 @@ func (u *User) Validate(bs bson.M) VErrors {
 
 	f = "Email"
 	v.Email(u.Email, b(f))
+	v.Size(u.Email, b(f), 5, 100)
 
 	return v.Errors
 }
