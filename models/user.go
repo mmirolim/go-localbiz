@@ -5,7 +5,6 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"strings"
 	"time"
-	"github.com/astaxie/beego/validation"
 	"github.com/astaxie/beego"
 )
 
@@ -236,57 +235,25 @@ func (u User) Field(b string) string {
 // validate field of DocModel
 //@todo all msg should be translatable
 func (u *User) Validate(bs bson.M) VErrors {
-	var errs VErrors
-	v := validation.Validation{}
+	v := Validator{}
 	// get bson field name
 	b := u.Bson
 
 	f := "UserName"
-	val := u.UserName
-	v.Required(val, b(f)).Message("valid_required")
-	v.MinSize(val, 2, b(f)).Message("valid_min")
-	v.MaxSize(val, 100, b(f)).Message("valid_max")
-	v.Required(val, b(f)).Message("valid_required")
-	v.AlphaDash(val, b(f)).Message("valid_alpha_dash")
-
-	f = "FirstName"
-	val = u.FirstName
-	v.Required(val, b(f)).Message("valid_required")
-	v.MinSize(val, 2, b(f)).Message("valid_min")
-	v.MaxSize(val, 100, b(f)).Message("valid_max")
+	v.Required(u.UserName, b(f))
+	v.Size(u.UserName, b(f), 2, 100)
 
 	f = "LastName"
-	val = u.LastName
-	v.Required(val, b(f)).Message("valid_required")
-	v.MinSize(val, 2, b(f)).Message("valid_min")
-	v.MaxSize(val, 100, b(f)).Message("valid_max")
+	v.Required(u.LastName, b(f))
+	v.Size(u.LastName, b(f), 2, 100)
+
+	f = "FirstName"
+	v.Required(u.FirstName, b(f))
+	v.Size(u.FirstName, b(f), 2, 100)
 
 	f = "Email"
-	val = u.Email
-	v.Email(val, b(f)).Message("valid_email")
+	v.Email(u.Email, b(f))
 
-	if v.HasErrors() {
-		for _, err := range v.Errors {
-			switch f := err.Key; f {
-			case u.Bson("UserName"):
-				m := make(map[string]string)
-				msg := err.Message
-				switch msg {
-				case "valid_required":
-					errs.Set(f, VMsg{msg, m})
-				case "valid_min":
-					m["Min"] = "2"
-					errs.Set(f, VMsg{msg, m})
-					beego.Warn(T(msg))
-				case "valid_max":
-					m["Max"] = "100"
-					errs.Set(f, VMsg{msg, m})
-				default:
-					errs.Set(f, VMsg{"unknown_message", m})
-				}
-
-			}
-		}
-	}
-	return errs
+	return v.Errors
 }
+

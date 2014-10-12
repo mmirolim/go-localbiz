@@ -18,11 +18,31 @@
         }
     },
     {
+        "id": "username",
+        "translation": "Username"
+    },
+    {
+        "id": "first_name",
+        "translation": "first name"
+    },
+    {
+        "id": "last_name",
+        "translation": "family name"
+    },
+    {
         "id": "valid_required",
         "translation": "{{ .Field }} should not be empty"
     },
     {
         "id": "valid_min",
         "translation": "{{ .Field }} should be {{ .Min }} character long"
+    },
+    {
+        "id": "valid_string_size",
+        "translation": "{{ .Field }} should be {{ .Min }} - {{ .Max }} character long"
+    },
+    {
+        "id": "valid_email",
+        "translation": "Please enter valid Email"
     }
 ]

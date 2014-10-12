@@ -12,6 +12,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"reflect"
 	"github.com/nicksnyder/go-i18n/i18n"
+	"regexp"
 )
 
 // connection
@@ -30,7 +31,7 @@ var (
 
 type VMsg struct {
 	Msg   string
-	Param map[string]string
+	Params map[string]interface {}
 }
 
 type BsonData struct {
@@ -126,7 +127,7 @@ func FieldBsonDic(d DocModel) map[string]string {
 
 }
 
-
+// @todo refactor to improve performance
 func (v *VErrors) Set(key string, msg VMsg) {
 	if msg.Msg == "" {
 		return
@@ -137,6 +138,57 @@ func (v *VErrors) Set(key string, msg VMsg) {
 	}
 	vErrors[key] = append(vErrors[key], msg)
 	*v = vErrors
+}
+
+type Validator struct {
+	Scenario string
+	Errors VErrors
+}
+
+func (v *Validator) Required(p interface {}, k string) {
+	failed := false
+	switch v := p.(type) {
+	case string:
+		if v == "" {
+			failed = true
+		}
+	case int:
+		if v == 0 {
+			failed = true
+		}
+	default:
+		// @todo impl for other types
+		failed = true
+	}
+	if failed {
+		v.Errors.Set(k, VMsg{Msg: "valid_required", Params: map[string]interface {}{"Field": k}})
+	}
+}
+
+func (v *Validator) AlphaDash(p, k string) {
+	pattern := regexp.MustCompile("[^\\d\\w-_]")
+	if !pattern.MatchString(p) {
+		v.Errors.Set(k, VMsg{Msg: "valid_alpha_dash", Params: map[string]interface {}{"Filed": k}})
+	}
+}
+
+func (v *Validator) Size(p, k string, min, max int) {
+	if len(p) < min || len(p) > max {
+		v.Errors.Set(k, VMsg{Msg: "valid_string_size", Params: map[string]interface{}{"Field": k, "Min": min, "Max": max}})
+	}
+}
+
+func (v *Validator) Email(p, k string) {
+	pattern := regexp.MustCompile("[\\w!#$%&'*+/=?^_`{|}~-]+(?:\\.[\\w!#$%&'*+/=?^_`{|}~-]+)*@(?:[\\w](?:[\\w-]*[\\w])?\\.)+[a-zA-Z0-9](?:[\\w-]*[\\w])?")
+	if !pattern.MatchString(p) {
+		v.Errors.Set(k, VMsg{Msg: "valid_email", Params: map[string]interface {}{"Field": k}})
+	}
+}
+
+func (v *Validator) Range(p int, k string, min, max int) {
+	if p < min || p > max {
+		v.Errors.Set(k, VMsg{Msg: "valid_range", Params: map[string]interface {}{"Field": k, "Min":min, "Max":max}})
+	}
 }
 
 // fmt field helper

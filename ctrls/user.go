@@ -109,33 +109,28 @@ func (this *User) SignUpProcess() {
 
 	if existentUser.UserName != "" {
 		vErrors := make(models.VErrors)
-		vErrors.Set(models.User{}.Bson("UserName"), models.VMsg{"valid_username_taken", map[string]string{}})
+		vErrors.Set(existentUser.Bson("UserName"), models.VMsg{"valid_username_taken", map[string]interface {}{}})
 		this.Data["ValidationErrors"] = vErrors
 		return
 	}
 
 	vErrors, err := models.DocCreate(&user)
-	beego.Warn(vErrors)
 	if err != nil {
 		beego.Error("User.SignUpProcess DocCreate ", err)
 		this.Abort("500")
 	}
 
 	if vErrors != nil {
-		verrs := make(map[string][]string)
+		ves := make(map[string][]string)
 		for k, v := range vErrors {
 				for _, vmsg := range v {
-					m := make(map[string]interface {})
-					m["Field"] = T(k)
-					for fld, str := range vmsg.Param {
-						m[fld] = T(str)
-					}
-					msg := T(vmsg.Msg, m)
-					verrs[k] = append(verrs[k], msg)
+					// translate field names
+					vmsg.Params["Field"] = T(vmsg.Params["Field"].(string))
+					msg := T(vmsg.Msg, vmsg.Params)
+					ves[k] = append(ves[k], msg)
 				}
 		}
-		beego.Warn(verrs)
-		this.Data["ValidationErrors"] = verrs
+		this.Data["ValidationErrors"] = ves
 	} else {
 		// clean session
 		this.DelSession("newUserData")

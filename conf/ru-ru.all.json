@@ -22,11 +22,27 @@
         "translation": "логин"
     },
     {
+        "id": "first_name",
+        "translation": "имя"
+    },
+    {
+        "id": "last_name",
+        "translation": "фамилия"
+    },
+    {
         "id": "valid_required",
         "translation": "поле {{ .Field }} обязательно для заполнения"
     },
     {
         "id": "valid_min",
         "translation": "в поле {{ .Field }} должно быть больше {{ .Min }} символов"
+    },
+    {
+        "id": "valid_string_size",
+        "translation": "{{ .Field }} должно иметь {{ .Min }} - {{ .Max }} символов"
+    },
+    {
+        "id": "valid_email",
+        "translation": "Пожалуйста введите правильный Email"
     }
 ]
