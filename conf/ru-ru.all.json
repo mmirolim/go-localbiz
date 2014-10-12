@@ -44,5 +44,13 @@
     {
         "id": "valid_email",
         "translation": "Пожалуйста введите правильный Email"
+    },
+    {
+        "id": "valid_not_contain",
+        "translation": "Поле {{ .Field }} не должно содержать слово {{ .Str }}"
+    },
+    {
+        "id": "valid_alpha_dash",
+        "translation": "{{ .Field }} может содержать буквы, числа и знак подчеркивания"
     }
 ]

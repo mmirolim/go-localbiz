@@ -143,7 +143,7 @@ func (v *VErrors) Set(key string, msg VMsg) {
 }
 
 type Validator struct {
-	Scenario string
+	Scenario string // should be create, update
 	Errors   VErrors
 }
 
@@ -168,8 +168,8 @@ func (v *Validator) Required(p interface{}, k string) {
 }
 
 func (v *Validator) AlphaDash(p, k string) {
-	if !reg_alpha_dash.MatchString(p) {
-		v.Errors.Set(k, VMsg{Msg: "valid_alpha_dash", Params: map[string]interface{}{"Filed": k}})
+	if reg_alpha_dash.MatchString(p) {
+		v.Errors.Set(k, VMsg{Msg: "valid_alpha_dash", Params: map[string]interface{}{"Field": k}})
 	}
 }
 
@@ -188,6 +188,15 @@ func (v *Validator) Email(p, k string) {
 func (v *Validator) Range(p int, k string, min, max int) {
 	if p < min || p > max {
 		v.Errors.Set(k, VMsg{Msg: "valid_range", Params: map[string]interface{}{"Field": k, "Min": min, "Max": max}})
+	}
+}
+
+func (v *Validator) NotContainStr(p, k string, ss []string) {
+	for _, s := range ss {
+		if p == s {
+			v.Errors.Set(k, VMsg{Msg: "valid_not_contain", Params: map[string]interface{}{"Field": k, "Str": s}})
+			break
+		}
 	}
 }
 

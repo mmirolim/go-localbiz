@@ -119,7 +119,6 @@ func (this *User) SignUpProcess() {
 		beego.Error("User.SignUpProcess DocCreate ", err)
 		this.Abort("500")
 	}
-
 	if vErrors != nil {
 		ves := make(map[string][]string)
 		for k, v := range vErrors {

@@ -239,22 +239,38 @@ func (u *User) Validate(bs bson.M) VErrors {
 	v := Validator{}
 	// get bson field name
 	b := u.Bson
-
+	// if bs empty validatate all fields
+	// else validate only updated fields
+	l := len(bs)
 	f := "UserName"
-	v.Required(u.UserName, b(f))
-	v.Size(u.UserName, b(f), 2, 100)
+	// check if field has udpate
+	_, ok := bs[b(f)]
+	if l == 0 || ok {
+		v.Required(u.UserName, b(f))
+		v.Size(u.UserName, b(f), 2, 100)
+		v.AlphaDash(u.UserName, b(f))
+		v.NotContainStr(u.UserName, b(f), []string{"admin", "administrator", "админ", "администратор"})
+	}
 
 	f = "LastName"
-	v.Required(u.LastName, b(f))
-	v.Size(u.LastName, b(f), 2, 100)
+	_, ok = bs[b(f)]
+	if l == 0 || ok {
+		v.Required(u.LastName, b(f))
+		v.Size(u.LastName, b(f), 2, 100)
+	}
 
 	f = "FirstName"
-	v.Required(u.FirstName, b(f))
-	v.Size(u.FirstName, b(f), 2, 100)
-
+	_, ok = bs[b(f)]
+	if l == 0 || ok {
+		v.Required(u.FirstName, b(f))
+		v.Size(u.FirstName, b(f), 2, 100)
+	}
 	f = "Email"
-	v.Email(u.Email, b(f))
-	v.Size(u.Email, b(f), 5, 100)
-
+	_, ok = bs[b(f)]
+	// not required field should validated if not empty
+	if u.Email != "" || ok {
+		v.Email(u.Email, b(f))
+		v.Size(u.Email, b(f), 5, 100)
+	}
 	return v.Errors
 }
