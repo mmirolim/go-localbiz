@@ -10,44 +10,44 @@ type Home struct {
 	baseController
 }
 
-func (this *Home) Get() {
-	this.TplNames = "index.tpl"
+func (c *Home) Get() {
+	c.TplNames = "index.tpl"
 
-	this.Data["csrf"] = this.XsrfToken()
-	this.Data["Lang"] = this.Lang
-	this.Data["Title"] = "Yalp.uz"
-	this.Data["Name"] = "My name is Mirolim!"
-	this.Data["Person"] = map[string]interface{}{"Person": "Mirolim"}
-	isAuth := this.GetSession("isAuth")
+	c.Data["csrf"] = c.XsrfToken()
+	c.Data["Lang"] = c.Lang
+	c.Data["Title"] = "Yalp.uz"
+	c.Data["Name"] = "My name is Mirolim!"
+	c.Data["Person"] = map[string]interface{}{"Person": "Mirolim"}
+	isAuth := c.GetSession("isAuth")
 	if isAuth != nil {
-		this.Data["isAuth"] = isAuth.(bool)
+		c.Data["isAuth"] = isAuth.(bool)
 	}
 }
 
-func (this *Home) Category() {
+func (c *Home) Category() {
 
 	var err error
 	// get attr, tag and city
-	city := this.Ctx.Input.Param(":city")
-	bizType := this.Ctx.Input.Param(":bizType")
+	city := c.Ctx.Input.Param(":city")
+	bizType := c.Ctx.Input.Param(":bizType")
 
 	var catList []List
 	foodService := new(models.FoodService)
 	switch bizType {
 	case foodService.GetC():
 		beego.Warn("foodservice type")
-		err = models.DocCountDistinct(foodService, bson.M{"lang": this.Lang, "city": city},
+		err = models.DocCountDistinct(foodService, bson.M{"lang": c.Lang, "city": city},
 			"types",
 			&catList,
 			60)
 	default:
-		this.Abort("404")
+		c.Abort("404")
 		return
 	}
 	check("FS->category DocCountDistinct -> ", err)
-	this.TplNames = "food-service/category.tpl"
+	c.TplNames = "food-service/category.tpl"
 
-	this.Data["Data"] = struct {
+	c.Data["Data"] = struct {
 		Category string
 		City     string
 		CatList  []List

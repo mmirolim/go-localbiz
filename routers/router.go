@@ -21,7 +21,8 @@ func init() {
 	beego.Router("/logout", &ctrls.Auth{}, "get:Logout")
 	beego.Router("/auth/?:socialNet", &ctrls.Auth{}, "*:Authorize")
 	beego.Router("/user/:id", &ctrls.User{})
-	beego.Router("/signup", &ctrls.User{}, "get:SignUp;post:SignUpProcess")
+	beego.Router("/user/:id/edit", &ctrls.User{}, "get:Edit;post:EditProc")
+	beego.Router("/signup", &ctrls.User{}, "get:SignUp;post:SignUpProc")
 	beego.Router("/", &ctrls.Home{})
 
 	beego.InsertFilter("/*/edit", beego.BeforeRouter, IsAuthenticated)

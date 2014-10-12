@@ -200,6 +200,18 @@ func (v *Validator) NotContainStr(p, k string, ss []string) {
 	}
 }
 
+// check in mongo collection if unique
+func (v *Validator) UniqueDoc(k, c string, b bson.M) {
+	sess := MgoSession.Copy()
+	defer sess.Close()
+
+	collection := sess.DB(MongoDbName).C(c)
+	_, err := collection.Find(b).Select(bson.M{k: 1}).Count()
+	if err != DocNotFound {
+		v.Errors.Set(k, VMsg{Msg: "valid_unique", Params: map[string]interface{}{"Field": k}})
+	}
+}
+
 // fmt field helper
 func FmtString(prop string, actions []string) string {
 	for _, v := range actions {

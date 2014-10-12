@@ -250,6 +250,7 @@ func (u *User) Validate(bs bson.M) VErrors {
 		v.Size(u.UserName, b(f), 2, 100)
 		v.AlphaDash(u.UserName, b(f))
 		v.NotContainStr(u.UserName, b(f), []string{"admin", "administrator", "админ", "администратор"})
+		v.UniqueDoc(b(f), u.GetC(), bson.M{b(f): u.UserName})
 	}
 
 	f = "LastName"

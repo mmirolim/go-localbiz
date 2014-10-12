@@ -36,21 +36,21 @@ var googleConf, errG = oauth2.NewConfig(&oauth2.Options{
 	"https://accounts.google.com/o/oauth2/auth",
 	"https://accounts.google.com/o/oauth2/token")
 
-func (this *Auth) Login() {
+func (c *Auth) Login() {
 	// check oauth2 configurations for all providers
 	panicOnErr(errFb)
 	panicOnErr(errG)
-	userId := this.GetSession("userId")
+	uid := c.GetSession("uid")
 	// if user authenticated redirect
-	if userId != nil {
-		this.Redirect("/", 302)
+	if uid != nil {
+		c.Redirect("/", 302)
 		return
 	}
-	socialNet := this.Ctx.Input.Param(":socialNet")
+	socialNet := c.Ctx.Input.Param(":socialNet")
 	if socialNet == "" {
-		this.TplNames = "login.tpl"
+		c.TplNames = "login.tpl"
 		loginUrl := "/login/"
-		this.Data["Data"] = struct {
+		c.Data["Data"] = struct {
 			UrlFb, UrlG string
 		}{
 			loginUrl + facebook, loginUrl + google,
@@ -58,13 +58,13 @@ func (this *Auth) Login() {
 		return
 	}
 	// store referrer to redirect to a page where user logged in
-	referer := this.Ctx.Request.Referer()
+	referer := c.Ctx.Request.Referer()
 	if referer != "" {
-		this.SetSession("redirectAfter", referer)
+		c.SetSession("redirectAfter", referer)
 	}
 	// @todo add csrf tokens as state
 	var urlR string
-	state := this.XsrfToken()
+	state := c.XsrfToken()
 	switch socialNet {
 	case facebook:
 		urlR = facebookConf.AuthCodeURL(state, "online", "auto")
@@ -73,26 +73,26 @@ func (this *Auth) Login() {
 	default:
 		urlR = "/login"
 	}
-	this.Redirect(urlR, 302)
+	c.Redirect(urlR, 302)
 }
 
-func (this *Auth) Logout() {
-	this.DestroySession()
-	this.Redirect("/", 302)
+func (c *Auth) Logout() {
+	c.DestroySession()
+	c.Redirect("/", 302)
 }
 
-func (this *Auth) Authorize() {
-	this.EnableRender = false
+func (c *Auth) Authorize() {
+	c.EnableRender = false
 	//@todo add msg to what was wrong
-	socialNet := this.Ctx.Input.Param(":socialNet")
+	socialNet := c.Ctx.Input.Param(":socialNet")
 	// confirm identity
-	state := this.Input().Get("state")
-	if state != this.XsrfToken() {
-		this.Abort("403")
+	state := c.Input().Get("state")
+	if state != c.XsrfToken() {
+		c.Abort("403")
 	}
-	code := this.Input().Get("code")
+	code := c.Input().Get("code")
 	if code == "" || socialNet == "" {
-		this.Ctx.Redirect(302, "/")
+		c.Ctx.Redirect(302, "/")
 		return
 	}
 	// declare var required for oauth providers
@@ -111,12 +111,12 @@ func (this *Auth) Authorize() {
 		providerConf = googleConf
 		userInfoUrl = "https://www.googleapis.com/plus/v1/people/me"
 	default:
-		this.Abort("400")
+		c.Abort("400")
 	}
 	// exchange code to access token
 	token, err := providerConf.Exchange(code)
 	if err != nil {
-		this.Redirect("/", 302)
+		c.Redirect("/", 302)
 		return
 	}
 	// get public information
@@ -128,14 +128,14 @@ func (this *Auth) Authorize() {
 
 	if err != nil {
 		beego.Warn(err)
-		this.Redirect("/", 302)
+		c.Redirect("/", 302)
 		return
 	}
 
 	err = json.NewDecoder(resp.Body).Decode(userData)
 	if err != nil {
 		beego.Error(err)
-		this.Redirect("/", 302)
+		c.Redirect("/", 302)
 		return
 	}
 
@@ -146,53 +146,53 @@ func (this *Auth) Authorize() {
 	case *models.FacebookData:
 		socialId = bson.M{"fb_data.id": userData.(*models.FacebookData).Id}
 		// get value and typecast to proper data type
-		this.SetSession("newUserData", *userData.(*models.FacebookData))
+		c.SetSession("newUserData", *userData.(*models.FacebookData))
 	case *models.GoogleData:
 		socialId = bson.M{"gg_data.id": userData.(*models.GoogleData).Id}
-		this.SetSession("newUserData", *userData.(*models.GoogleData))
+		c.SetSession("newUserData", *userData.(*models.GoogleData))
 	default:
 		beego.Error("userData type unkown")
 	}
 	err = models.DocFindOne(socialId, bson.M{}, &user, 0)
 	if err != nil && err != models.DocNotFound {
 		beego.Error(err)
-		this.Redirect("/login", 302)
+		c.Redirect("/login", 302)
 		return
 	}
 	if err == models.DocNotFound {
-		// this should be new user
-		this.Redirect("/signup", 302)
+		// c should be new user
+		c.Redirect("/signup", 302)
 		return
 	} else {
 		// delete newUserData if existent user
-		this.DelSession("newUserData")
+		c.DelSession("newUserData")
 		// update last login
-		userId, ok1 := models.FieldDic["User"]["FieldBson"]["Id"]
+		uid, ok1 := models.FieldDic["User"]["FieldBson"]["Id"]
 		lastLogin, ok2 := models.FieldDic["User"]["FieldBson"]["LastLoginAt"]
 		if !ok1 || !ok2 {
 			beego.Error("Auth.Authorize FieldDic missing term")
-			this.Abort("500")
+			c.Abort("500")
 		}
-		q := bson.M{userId: user.Id}
+		q := bson.M{uid: user.Id}
 		fld := bson.M{lastLogin: time.Now()}
 		vErrors, err := models.DocUpdate(q, &user, fld)
 		//@todo handle login error properly with messages
 		if err != nil {
 			beego.Error("Auth.Authorize DocUpdate ", err)
-			this.Redirect("/login", 302)
+			c.Redirect("/login", 302)
 			return
 		}
 		if vErrors != nil {
 			beego.Warn(vErrors)
-			this.Redirect("/login", 302)
+			c.Redirect("/login", 302)
 			return
 		}
-		redirectUrl := this.GetSession("redirectAfter")
+		redirectUrl := c.GetSession("redirectAfter")
 		if redirectUrl == nil {
 			redirectUrl = "/"
 		}
-		this.SetSession("userId", user.Id.Hex())
-		this.Redirect(redirectUrl.(string), 302)
+		c.SetSession("uid", user.Id.Hex())
+		c.Redirect(redirectUrl.(string), 302)
 	}
 
 }

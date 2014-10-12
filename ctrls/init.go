@@ -53,24 +53,24 @@ func GetUrl(ss ...string) string {
 }
 
 // implement Prepare method for base router
-func (this *baseController) Prepare() {
+func (c *baseController) Prepare() {
 	// Setting properties
-	this.Data["AppVer"] = AppVer
-	this.Data["IsPro"] = IsPro
-	this.Data["APP"] = APP
+	c.Data["AppVer"] = AppVer
+	c.Data["IsPro"] = IsPro
+	c.Data["APP"] = APP
 
 	// set default layout and layout sections
-	this.Layout = "layout.tpl"
-	this.LayoutSections = make(map[string]string)
-	this.LayoutSections["Header"] = "header.tpl"
-	this.LayoutSections["Footer"] = "footer.tpl"
+	c.Layout = "layout.tpl"
+	c.LayoutSections = make(map[string]string)
+	c.LayoutSections["Header"] = "header.tpl"
+	c.LayoutSections["Footer"] = "footer.tpl"
 
 	// @todo  comment on production
 	if IsPro == false {
 		initLocales()
 	}
 	// set language
-	this.setLangVer()
+	c.setLangVer()
 
 }
 
@@ -91,13 +91,13 @@ func initLocales() {
 }
 
 // set lang to use
-func (this *baseController) setLangVer() {
+func (c *baseController) setLangVer() {
 	var lang string
 	// Check URL arguments.
-	urlLang := strings.ToLower(this.Input().Get("lang"))
+	urlLang := strings.ToLower(c.Input().Get("lang"))
 
 	// Get language info from 'Accept-Language'
-	acceptLang := strings.ToLower(this.Ctx.Request.Header.Get("Accept-Language"))
+	acceptLang := strings.ToLower(c.Ctx.Request.Header.Get("Accept-Language"))
 
 	Tfn, err := i18n.Tfunc(urlLang, acceptLang, defaultLang)
 	// set T func in ctrls
@@ -114,9 +114,9 @@ func (this *baseController) setLangVer() {
 	}
 
 	// Set lang properties
-	this.Lang = lang
-	this.Data["Lang"] = lang
-	this.Data["CurrentLang"] = langTypes[lang]
+	c.Lang = lang
+	c.Data["Lang"] = lang
+	c.Data["CurrentLang"] = langTypes[lang]
 }
 
 func InitApp() {

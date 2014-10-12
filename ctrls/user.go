@@ -13,31 +13,31 @@ type User struct {
 }
 
 // @todo should let only for some roles and user himself viewable
-func (this *User) Get() {
-	this.TplNames = "user/user.tpl"
+func (c *User) Get() {
+	c.TplNames = "user/user.tpl"
 	// find user from id
-	id := this.Ctx.Input.Param(":id")
+	id := c.Ctx.Input.Param(":id")
 
 	var user models.User
 	objId := bson.ObjectIdHex(id)
 	err := models.DocFindOne(bson.M{"_id": objId}, bson.M{}, &user, 60)
 	if err != nil {
 		beego.Error(err)
-		this.Abort("404")
+		c.Abort("404")
 	}
 
-	this.Data["User"] = user
+	c.Data["User"] = user
 }
 
-func (this *User) SignUp() {
+func (c *User) SignUp() {
 
-	this.TplNames = "user/signup.tpl"
+	c.TplNames = "user/signup.tpl"
 	var user models.User
 
-	newUserData := this.GetSession("newUserData")
+	newUserData := c.GetSession("newUserData")
 	if newUserData == nil {
 		beego.Error("Sign up after social login for new users")
-		this.Redirect("/", 302)
+		c.Redirect("/", 302)
 		return
 	}
 
@@ -50,20 +50,20 @@ func (this *User) SignUp() {
 		beego.Error("Not known social net name")
 	}
 
-	this.Data["csrfToken"] = template.HTML(this.XsrfFormHtml())
+	c.Data["csrfToken"] = template.HTML(c.XsrfFormHtml())
 	// prefill data from social account
-	this.Data["User"] = user
+	c.Data["User"] = user
 
 }
-func (this *User) SignUpProcess() {
+func (c *User) SignUpProc() {
 	// @todo add description msg to return and aborts
 	// process sign-up data on post
-	if this.Ctx.Request.Method != "POST" {
+	if c.Ctx.Request.Method != "POST" {
 		return
 	}
-	newUserData := this.GetSession("newUserData")
+	newUserData := c.GetSession("newUserData")
 	if newUserData == nil {
-		beego.Error("User.SignUpProcess no newUserData")
+		beego.Error("User.SignUpProc no newUserData")
 		return
 	}
 	var err error
@@ -79,12 +79,12 @@ func (this *User) SignUpProcess() {
 		return
 	}
 
-	this.TplNames = "user/signup.tpl"
+	c.TplNames = "user/signup.tpl"
 
-	formMap := this.Ctx.Request.PostForm
+	formMap := c.Ctx.Request.PostForm
 	// if user locale empty set default to current lang
 	if user.Locale != "" {
-		user.Locale = this.Lang
+		user.Locale = c.Lang
 	}
 
 	user.UserName = formMap["username"][0]
@@ -103,21 +103,21 @@ func (this *User) SignUpProcess() {
 	var existentUser models.User
 	err = models.DocFindOne(bson.M{"username": user.UserName}, bson.M{"username": 1}, &existentUser, 0)
 	if err != nil && err != models.DocNotFound {
-		beego.Error("User.SignUpProcess", err)
-		this.Abort("500")
+		beego.Error("User.SignUpProc", err)
+		c.Abort("500")
 	}
 
 	if existentUser.UserName != "" {
 		vErrors := make(models.VErrors)
 		vErrors.Set(existentUser.Bson("UserName"), models.VMsg{"valid_username_taken", map[string]interface{}{}})
-		this.Data["ValidationErrors"] = vErrors
+		c.Data["ValidationErrors"] = vErrors
 		return
 	}
 
 	vErrors, err := models.DocCreate(&user)
 	if err != nil {
-		beego.Error("User.SignUpProcess DocCreate ", err)
-		this.Abort("500")
+		beego.Error("User.SignUpProc DocCreate ", err)
+		c.Abort("500")
 	}
 	if vErrors != nil {
 		ves := make(map[string][]string)
@@ -129,26 +129,52 @@ func (this *User) SignUpProcess() {
 				ves[k] = append(ves[k], msg)
 			}
 		}
-		this.Data["ValidationErrors"] = ves
+		c.Data["ValidationErrors"] = ves
 	} else {
 		// clean session
-		this.DelSession("newUserData")
+		c.DelSession("newUserData")
 		//@todo should redirect after successeful signup to user account to add extra info and img
 		// redirect to user's page
 		err = models.DocFindOne(bson.M{"username": user.UserName}, bson.M{"username": 1}, &user, 0)
 
 		// set user data to session
-		this.SetSession("userId", user.Id.Hex())
+		c.SetSession("userId", user.Id.Hex())
 		var urlR string
-		if !check("User.SignUpProcess DocFineOne ", err) {
+		if !check("User.SignUpProc DocFineOne ", err) {
 			urlR = "/user/" + user.Id.Hex()
 		} else {
 			urlR = "/"
 		}
-		this.Redirect(urlR, 302)
+		c.Redirect(urlR, 302)
 		return
 	}
 
-	this.Data["csrfToken"] = template.HTML(this.XsrfFormHtml())
-	this.Data["User"] = user
+	c.Data["csrfToken"] = template.HTML(c.XsrfFormHtml())
+	c.Data["User"] = user
+}
+
+func (c *User) Edit() {
+	c.TplNames = "user/edit.tpl"
+	uid := c.GetSession("uid")
+	id := c.Ctx.Input.Param(":id")
+	if uid == nil || uid.(string) != id {
+		c.Abort("403")
+		return
+	}
+	var user models.User
+	objId := bson.ObjectIdHex(uid.(string))
+	// @todo dont cache if user edits page Or invalidate cache on update
+	err := models.DocFindOne(bson.M{user.Bson("Id"): objId}, bson.M{}, &user, 0)
+	if err != nil {
+		beego.Error(err)
+		c.Abort("404")
+	}
+	c.Data["User"] = user
+}
+
+func (c *User) EditProc() {
+	// process sign-up data on post
+	if c.Ctx.Request.Method != "POST" {
+		return
+	}
 }
