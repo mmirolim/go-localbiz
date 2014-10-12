@@ -13,7 +13,7 @@ var (
 	IsPro       bool
 	langTypes   map[string]string
 	defaultLang string
-	T         i18n.TranslateFunc
+	T           i18n.TranslateFunc
 )
 
 // convenience type for i18n

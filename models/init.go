@@ -2,17 +2,17 @@ package models
 
 import (
 	"bytes"
-	"fmt"
-	"strings"
 	"encoding/gob"
+	"fmt"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/cache"
 	_ "github.com/astaxie/beego/cache/redis"
+	"github.com/nicksnyder/go-i18n/i18n"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"reflect"
-	"github.com/nicksnyder/go-i18n/i18n"
 	"regexp"
+	"strings"
 )
 
 // connection
@@ -25,13 +25,12 @@ var (
 	cachePrefix     = beego.AppConfig.String("cache::prefix")
 	DocNotFound     = mgo.ErrNotFound
 	FieldDic        map[string]map[string]map[string]string
-	T = i18n.IdentityTfunc
+	T               = i18n.IdentityTfunc
 )
 
-
 type VMsg struct {
-	Msg   string
-	Params map[string]interface {}
+	Msg    string
+	Params map[string]interface{}
 }
 
 type BsonData struct {
@@ -142,10 +141,10 @@ func (v *VErrors) Set(key string, msg VMsg) {
 
 type Validator struct {
 	Scenario string
-	Errors VErrors
+	Errors   VErrors
 }
 
-func (v *Validator) Required(p interface {}, k string) {
+func (v *Validator) Required(p interface{}, k string) {
 	failed := false
 	switch v := p.(type) {
 	case string:
@@ -161,14 +160,14 @@ func (v *Validator) Required(p interface {}, k string) {
 		failed = true
 	}
 	if failed {
-		v.Errors.Set(k, VMsg{Msg: "valid_required", Params: map[string]interface {}{"Field": k}})
+		v.Errors.Set(k, VMsg{Msg: "valid_required", Params: map[string]interface{}{"Field": k}})
 	}
 }
 
 func (v *Validator) AlphaDash(p, k string) {
 	pattern := regexp.MustCompile("[^\\d\\w-_]")
 	if !pattern.MatchString(p) {
-		v.Errors.Set(k, VMsg{Msg: "valid_alpha_dash", Params: map[string]interface {}{"Filed": k}})
+		v.Errors.Set(k, VMsg{Msg: "valid_alpha_dash", Params: map[string]interface{}{"Filed": k}})
 	}
 }
 
@@ -181,13 +180,13 @@ func (v *Validator) Size(p, k string, min, max int) {
 func (v *Validator) Email(p, k string) {
 	pattern := regexp.MustCompile("[\\w!#$%&'*+/=?^_`{|}~-]+(?:\\.[\\w!#$%&'*+/=?^_`{|}~-]+)*@(?:[\\w](?:[\\w-]*[\\w])?\\.)+[a-zA-Z0-9](?:[\\w-]*[\\w])?")
 	if !pattern.MatchString(p) {
-		v.Errors.Set(k, VMsg{Msg: "valid_email", Params: map[string]interface {}{"Field": k}})
+		v.Errors.Set(k, VMsg{Msg: "valid_email", Params: map[string]interface{}{"Field": k}})
 	}
 }
 
 func (v *Validator) Range(p int, k string, min, max int) {
 	if p < min || p > max {
-		v.Errors.Set(k, VMsg{Msg: "valid_range", Params: map[string]interface {}{"Field": k, "Min":min, "Max":max}})
+		v.Errors.Set(k, VMsg{Msg: "valid_range", Params: map[string]interface{}{"Field": k, "Min": min, "Max": max}})
 	}
 }
 

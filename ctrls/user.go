@@ -109,7 +109,7 @@ func (this *User) SignUpProcess() {
 
 	if existentUser.UserName != "" {
 		vErrors := make(models.VErrors)
-		vErrors.Set(existentUser.Bson("UserName"), models.VMsg{"valid_username_taken", map[string]interface {}{}})
+		vErrors.Set(existentUser.Bson("UserName"), models.VMsg{"valid_username_taken", map[string]interface{}{}})
 		this.Data["ValidationErrors"] = vErrors
 		return
 	}
@@ -123,12 +123,12 @@ func (this *User) SignUpProcess() {
 	if vErrors != nil {
 		ves := make(map[string][]string)
 		for k, v := range vErrors {
-				for _, vmsg := range v {
-					// translate field names
-					vmsg.Params["Field"] = T(vmsg.Params["Field"].(string))
-					msg := T(vmsg.Msg, vmsg.Params)
-					ves[k] = append(ves[k], msg)
-				}
+			for _, vmsg := range v {
+				// translate field names
+				vmsg.Params["Field"] = T(vmsg.Params["Field"].(string))
+				msg := T(vmsg.Msg, vmsg.Params)
+				ves[k] = append(ves[k], msg)
+			}
 		}
 		this.Data["ValidationErrors"] = ves
 	} else {

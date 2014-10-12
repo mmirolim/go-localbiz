@@ -1,11 +1,11 @@
 package models
 
 import (
+	"github.com/astaxie/beego"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"strings"
 	"time"
-	"github.com/astaxie/beego"
 )
 
 // roles admin = 1, editor = 2, tester = 3, client = 4, user = 5
@@ -214,6 +214,7 @@ func (u *User) SetDefaults() {
 func (u *User) SetName(firstName, lastName string) {
 	u.Name = strings.TrimSpace(firstName) + " " + strings.TrimSpace(lastName)
 }
+
 // return bson field name from cached FieldDic, convenience func
 func (u User) Bson(f string) string {
 	b, ok := FieldDic["User"]["FieldBson"][f]
@@ -256,4 +257,3 @@ func (u *User) Validate(bs bson.M) VErrors {
 
 	return v.Errors
 }
-

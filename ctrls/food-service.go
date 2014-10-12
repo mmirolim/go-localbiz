@@ -61,7 +61,7 @@ func (this *FoodService) Category() {
 	// $regex query used to match case sensitive index
 	q := bson.D{
 		{"lang", this.Lang},
-		{attr, bson.M{"$regex": bson.RegEx{Pattern:`^` + tag, Options:"i"}}},
+		{attr, bson.M{"$regex": bson.RegEx{Pattern: `^` + tag, Options: "i"}}},
 		{"city", city},
 	}
 
