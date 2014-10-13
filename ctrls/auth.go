@@ -167,14 +167,8 @@ func (c *Auth) Authorize() {
 		// delete newUserData if existent user
 		c.DelSession("newUserData")
 		// update last login
-		uid, ok1 := models.FieldDic["User"]["FieldBson"]["Id"]
-		lastLogin, ok2 := models.FieldDic["User"]["FieldBson"]["LastLoginAt"]
-		if !ok1 || !ok2 {
-			beego.Error("Auth.Authorize FieldDic missing term")
-			c.Abort("500")
-		}
-		q := bson.M{uid: user.Id}
-		fld := bson.M{lastLogin: time.Now()}
+		q := bson.M{user.Bson("Id"): user.Id}
+		fld := bson.M{user.Bson("LastLoginAt"): time.Now()}
 		vErrors, err := models.DocUpdate(q, &user, fld)
 		//@todo handle login error properly with messages
 		if err != nil {

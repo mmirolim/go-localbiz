@@ -198,6 +198,7 @@ func (u *User) InitWithGg(gg GoogleData) {
 
 func (u *User) SetDefaults() {
 
+	// @todo updated at should not change when use just logins
 	u.UpdatedAt = time.Now()
 
 	if u.CreatedAt.Year() == 1 {
@@ -234,7 +235,7 @@ func (u User) Field(b string) string {
 }
 
 // validate field of DocModel
-//@todo all msg should be translatable
+//@todo refactor to be dry
 func (u *User) Validate(bs bson.M) VErrors {
 	v := Validator{}
 	// get bson field name
@@ -246,32 +247,60 @@ func (u *User) Validate(bs bson.M) VErrors {
 	// check if field has udpate
 	_, ok := bs[b(f)]
 	if l == 0 || ok {
-		v.Required(u.UserName, b(f))
-		v.Size(u.UserName, b(f), 2, 100)
-		v.AlphaDash(u.UserName, b(f))
-		v.NotContainStr(u.UserName, b(f), []string{"admin", "administrator", "админ", "администратор"})
-		v.UniqueDoc(b(f), u.GetC(), bson.M{b(f): u.UserName})
+		var uname string
+		if ok {
+			// it is update,
+			uname = bs[b(f)].(string)
+		} else {
+			uname = u.UserName
+		}
+		v.Required(uname, b(f))
+		v.Size(uname, b(f), 2, 100)
+		v.AlphaDash(uname, b(f))
+		v.NotContainStr(uname, b(f), []string{"admin", "administrator", "админ", "администратор"})
+		v.UniqueDoc(b(f), u.GetC(), bson.M{b(f): uname})
 	}
 
 	f = "LastName"
 	_, ok = bs[b(f)]
 	if l == 0 || ok {
-		v.Required(u.LastName, b(f))
-		v.Size(u.LastName, b(f), 2, 100)
+		var ul string
+		if ok {
+			// it is update,
+			ul = bs[b(f)].(string)
+		} else {
+			ul = u.UserName
+		}
+		v.Required(ul, b(f))
+		v.Size(ul, b(f), 2, 100)
 	}
 
 	f = "FirstName"
 	_, ok = bs[b(f)]
 	if l == 0 || ok {
-		v.Required(u.FirstName, b(f))
-		v.Size(u.FirstName, b(f), 2, 100)
+		var uf string
+		if ok {
+			// it is update,
+			uf = bs[b(f)].(string)
+		} else {
+			uf = u.UserName
+		}
+		v.Required(uf, b(f))
+		v.Size(uf, b(f), 2, 100)
 	}
 	f = "Email"
 	_, ok = bs[b(f)]
 	// not required field should validated if not empty
 	if u.Email != "" || ok {
-		v.Email(u.Email, b(f))
-		v.Size(u.Email, b(f), 5, 100)
+		var em string
+		if ok {
+			// it is update,
+			em = bs[b(f)].(string)
+		} else {
+			em = u.Email
+		}
+		v.Email(em, b(f))
+		v.Size(em, b(f), 5, 100)
 	}
 	return v.Errors
 }

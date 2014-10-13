@@ -16,21 +16,19 @@ type User struct {
 func (c *User) Get() {
 	c.TplNames = "user/user.tpl"
 	// find user from id
-	id := c.Ctx.Input.Param(":id")
+	username := c.Ctx.Input.Param(":username")
 
 	var user models.User
-	objId := bson.ObjectIdHex(id)
-	err := models.DocFindOne(bson.M{"_id": objId}, bson.M{}, &user, 60)
+	err := models.DocFindOne(bson.M{user.Bson("UserName"): username}, bson.M{}, &user, 60)
 	if err != nil {
 		beego.Error(err)
 		c.Abort("404")
 	}
-
+	c.Data["Uid"] = user.Id.Hex()
 	c.Data["User"] = user
 }
 
 func (c *User) SignUp() {
-
 	c.TplNames = "user/signup.tpl"
 	var user models.User
 
@@ -141,7 +139,7 @@ func (c *User) SignUpProc() {
 		c.SetSession("userId", user.Id.Hex())
 		var urlR string
 		if !check("User.SignUpProc DocFineOne ", err) {
-			urlR = "/user/" + user.Id.Hex()
+			urlR = "/user/" + user.UserName
 		} else {
 			urlR = "/"
 		}
@@ -153,28 +151,68 @@ func (c *User) SignUpProc() {
 	c.Data["User"] = user
 }
 
+// @todo should be protected by filter only admin and user himself can edit it
 func (c *User) Edit() {
+	beego.Warn("User.Edit")
+	var err error
 	c.TplNames = "user/edit.tpl"
+	// uid not nil checked in isAuth filter
 	uid := c.GetSession("uid")
-	id := c.Ctx.Input.Param(":id")
-	if uid == nil || uid.(string) != id {
-		c.Abort("403")
-		return
-	}
 	var user models.User
 	objId := bson.ObjectIdHex(uid.(string))
 	// @todo dont cache if user edits page Or invalidate cache on update
-	err := models.DocFindOne(bson.M{user.Bson("Id"): objId}, bson.M{}, &user, 0)
+	err = models.DocFindOne(bson.M{user.Bson("Id"): objId}, bson.M{}, &user, 0)
 	if err != nil {
 		beego.Error(err)
 		c.Abort("404")
 	}
-	c.Data["User"] = user
-}
 
-func (c *User) EditProc() {
-	// process sign-up data on post
-	if c.Ctx.Request.Method != "POST" {
-		return
+	if c.Ctx.Request.Method == "POST" {
+		formMap := c.Ctx.Request.PostForm
+		flds := make(bson.M)
+		B := user.Bson
+		for k, v := range formMap {
+			if v[0] != "" && k != "_xsrf" {
+				flds[k] = v[0]
+			}
+		}
+		// check and parse birthday
+		if _, ok := flds[B("Bday")]; ok {
+			flds[B("Bday")], err = time.Parse("2006-01-02", flds[B("Bday")].(string))
+			if err != nil {
+				delete(flds, B("Bday"))
+			}
+		}
+
+		vErrors, err := models.DocUpdate(bson.M{"_id": user.Id}, &user, flds)
+		//@todo handle login error properly with messages
+		if err != nil {
+			beego.Error("User.Edit DocUpdate ", err)
+			c.Redirect("/login", 302)
+			return
+		}
+
+		if vErrors != nil {
+			ves := make(map[string][]string)
+			for k, v := range vErrors {
+				for _, vmsg := range v {
+					// translate field names
+					vmsg.Params["Field"] = T(vmsg.Params["Field"].(string))
+					msg := T(vmsg.Msg, vmsg.Params)
+					ves[k] = append(ves[k], msg)
+				}
+			}
+			c.Data["ValidationErrors"] = ves
+		} else {
+			// get updated user object
+			err = models.DocFindOne(bson.M{user.Bson("Id"): objId}, bson.M{}, &user, 0)
+			if err != nil {
+				beego.Error(err)
+				c.Abort("500")
+			}
+		}
 	}
+	c.Data["csrfToken"] = template.HTML(c.XsrfFormHtml())
+	c.Data["Uid"] = uid
+	c.Data["User"] = user
 }

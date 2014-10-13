@@ -206,8 +206,8 @@ func (v *Validator) UniqueDoc(k, c string, b bson.M) {
 	defer sess.Close()
 
 	collection := sess.DB(MongoDbName).C(c)
-	_, err := collection.Find(b).Select(bson.M{k: 1}).Count()
-	if err != DocNotFound {
+	n, err := collection.Find(b).Select(bson.M{k: 1}).Count()
+	if err == nil && n > 0 {
 		v.Errors.Set(k, VMsg{Msg: "valid_unique", Params: map[string]interface{}{"Field": k}})
 	}
 }

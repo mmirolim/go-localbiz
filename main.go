@@ -23,6 +23,7 @@ func initialize() {
 }
 
 func main() {
+	// @todo refactor with aspect oriented programming
 	initialize()
 
 	if beego.AppConfig.String("runmode") == "dev" {
