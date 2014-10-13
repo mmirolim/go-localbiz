@@ -128,9 +128,10 @@ func (f *FoodService) SetDefaults() {
 	}
 }
 
-func (f *FoodService) Validate(bs bson.M) VErrors {
+func (f *FoodService) Validate(s string, bs bson.M) VErrors {
 	var vErrors VErrors
 	_ = bs
+	_ = s
 	return vErrors
 
 }

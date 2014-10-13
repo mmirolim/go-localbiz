@@ -236,71 +236,57 @@ func (u User) Field(b string) string {
 
 // validate field of DocModel
 //@todo refactor to be dry
-func (u *User) Validate(bs bson.M) VErrors {
+func (u *User) Validate(s string, bs bson.M) VErrors {
 	v := Validator{}
+	v.Scenario = s
+	uMap := make(map[string]interface{})
 	// get bson field name
 	b := u.Bson
-	// if bs empty validatate all fields
-	// else validate only updated fields
-	l := len(bs)
-	f := "UserName"
-	// check if field has udpate
-	_, ok := bs[b(f)]
-	if l == 0 || ok {
-		var uname string
-		if ok {
-			// it is update,
-			uname = bs[b(f)].(string)
-		} else {
-			uname = u.UserName
+	// if validation scenario update validate
+	// only provided in bson map fields
+	// else validate user properties
+	// do not update username
+	delete(bs, b("UserName"))
+	if v.Scenario == "update" {
+		for k, val := range bs {
+			uMap[k] = val
 		}
-		v.Required(uname, b(f))
-		v.Size(uname, b(f), 2, 100)
-		v.AlphaDash(uname, b(f))
-		v.NotContainStr(uname, b(f), []string{"admin", "administrator", "админ", "администратор"})
-		v.UniqueDoc(b(f), u.GetC(), bson.M{b(f): uname})
+
+	} else {
+		uMap[b("UserName")] = u.UserName
+		uMap[b("FirstName")] = u.FirstName
+		uMap[b("LastName")] = u.LastName
+		uMap[b("Email")] = u.Email
+	}
+	for k, val := range uMap {
+		switch k {
+		case b("UserName"):
+			x := val.(string)
+			v.Required(x, k)
+			v.Size(x, k, 2, 100)
+			v.AlphaDash(x, k)
+			v.NotContainStr(x, k, []string{"admin", "administrator", "админ", "администратор"})
+			v.UniqueDoc(k, u.GetC(), bson.M{k: x})
+
+		case b("FirstName"):
+			x := val.(string)
+			v.Required(x, k)
+			v.Size(x, k, 2, 100)
+
+		case b("LastName"):
+			x := val.(string)
+			v.Required(x, k)
+			v.Size(x, k, 2, 100)
+
+		case b("Email"):
+			x := val.(string)
+			// it is not required validate only if not empty
+			if x != "" {
+				v.Email(x, k)
+				v.Size(x, k, 5, 100)
+			}
+		}
 	}
 
-	f = "LastName"
-	_, ok = bs[b(f)]
-	if l == 0 || ok {
-		var ul string
-		if ok {
-			// it is update,
-			ul = bs[b(f)].(string)
-		} else {
-			ul = u.UserName
-		}
-		v.Required(ul, b(f))
-		v.Size(ul, b(f), 2, 100)
-	}
-
-	f = "FirstName"
-	_, ok = bs[b(f)]
-	if l == 0 || ok {
-		var uf string
-		if ok {
-			// it is update,
-			uf = bs[b(f)].(string)
-		} else {
-			uf = u.UserName
-		}
-		v.Required(uf, b(f))
-		v.Size(uf, b(f), 2, 100)
-	}
-	f = "Email"
-	_, ok = bs[b(f)]
-	// not required field should validated if not empty
-	if u.Email != "" || ok {
-		var em string
-		if ok {
-			// it is update,
-			em = bs[b(f)].(string)
-		} else {
-			em = u.Email
-		}
-		v.Email(em, b(f))
-		v.Size(em, b(f), 5, 100)
-	}
 	return v.Errors
 }

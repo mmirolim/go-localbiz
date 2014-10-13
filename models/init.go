@@ -45,7 +45,7 @@ type DocModel interface {
 	GetIndex() []mgo.Index
 	FmtFields()
 	SetDefaults()
-	Validate(bs bson.M) VErrors
+	Validate(s string, bs bson.M) VErrors
 	GetLocation() Geo
 }
 
@@ -140,6 +140,21 @@ func (v *VErrors) Set(key string, msg VMsg) {
 	}
 	vErrors[key] = append(vErrors[key], msg)
 	*v = vErrors
+}
+func (v *VErrors) T(t i18n.TranslateFunc) map[string][]string {
+	m := make(map[string][]string)
+	if len(*v) == 0 {
+		return m
+	}
+	for k, vm := range *v {
+		for _, msg := range vm {
+			// translate field names
+			msg.Params["Field"] = t(msg.Params["Field"].(string))
+			s := t(msg.Msg, msg.Params)
+			m[k] = append(m[k], s)
+		}
+	}
+	return m
 }
 
 type Validator struct {
@@ -418,7 +433,7 @@ func DocCountDistinct(m DocModel, match bson.M, category string, data interface{
 func DocCreate(m DocModel) (VErrors, error) {
 	var err error
 	// validate model before inserting
-	vErrors := m.Validate(bson.M{})
+	vErrors := m.Validate("create", bson.M{})
 	if vErrors != nil {
 		return vErrors, err
 	}
@@ -439,7 +454,7 @@ func DocCreate(m DocModel) (VErrors, error) {
 func DocUpdate(q bson.M, m DocModel, flds bson.M) (VErrors, error) {
 	var err error
 	// validate model before inserting
-	vErrors := m.Validate(flds)
+	vErrors := m.Validate("update", flds)
 	if vErrors != nil {
 		return vErrors, err
 	}

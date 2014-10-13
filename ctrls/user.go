@@ -118,16 +118,7 @@ func (c *User) SignUpProc() {
 		c.Abort("500")
 	}
 	if vErrors != nil {
-		ves := make(map[string][]string)
-		for k, v := range vErrors {
-			for _, vmsg := range v {
-				// translate field names
-				vmsg.Params["Field"] = T(vmsg.Params["Field"].(string))
-				msg := T(vmsg.Msg, vmsg.Params)
-				ves[k] = append(ves[k], msg)
-			}
-		}
-		c.Data["ValidationErrors"] = ves
+		c.Data["ValidationErrors"] = vErrors.T(T)
 	} else {
 		// clean session
 		c.DelSession("newUserData")
@@ -166,7 +157,6 @@ func (c *User) Edit() {
 		beego.Error(err)
 		c.Abort("404")
 	}
-
 	if c.Ctx.Request.Method == "POST" {
 		formMap := c.Ctx.Request.PostForm
 		flds := make(bson.M)
@@ -193,16 +183,7 @@ func (c *User) Edit() {
 		}
 
 		if vErrors != nil {
-			ves := make(map[string][]string)
-			for k, v := range vErrors {
-				for _, vmsg := range v {
-					// translate field names
-					vmsg.Params["Field"] = T(vmsg.Params["Field"].(string))
-					msg := T(vmsg.Msg, vmsg.Params)
-					ves[k] = append(ves[k], msg)
-				}
-			}
-			c.Data["ValidationErrors"] = ves
+			c.Data["ValidationErrors"] = vErrors.T(T)
 		} else {
 			// get updated user object
 			err = models.DocFindOne(bson.M{user.Bson("Id"): objId}, bson.M{}, &user, 0)

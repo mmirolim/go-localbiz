@@ -13,7 +13,6 @@
     <form action="/user/edit/[[ .Uid ]][[ if .Lang ]]?lang=[[ .Lang ]] [[ end ]]" method="post">
         First name: <input type="text" name="first_name" value="[[ .User.FirstName ]]"/><br/>
         Last name: <input type="text" name="last_name" value="[[ .User.LastName ]]"/><br/>
-        Username: <input type="text" name="username" value="[[ .User.UserName ]]"/><br/>
         Email: <input type="email" name="email" value="[[ .User.Email ]]"/><br/>
         Birthday: <input type="date" name="bday" value="[[ .User.Bday ]]"/><br/>
         <input type="radio" name="gender" value="male" [[ if eq .User.Gender "male" ]] checked [[ end ]]/>Make<br/>
