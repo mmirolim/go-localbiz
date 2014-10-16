@@ -87,7 +87,10 @@ func (c *Auth) Authorize() {
 	socialNet := c.Ctx.Input.Param(":socialNet")
 	// confirm identity
 	state := c.Input().Get("state")
-	if state != c.XsrfToken() {
+	// @todo remove social net check
+	// temp fix for google login
+	if state != c.XsrfToken() && socialNet != "google" {
+		beego.Warn("Auth.Authorize state mismatch")
 		c.Abort("403")
 	}
 	code := c.Input().Get("code")
@@ -141,6 +144,7 @@ func (c *Auth) Authorize() {
 
 	var user models.User
 	var socialId bson.M
+
 	// search by social id
 	switch userData.(type) {
 	case *models.FacebookData:
@@ -153,40 +157,43 @@ func (c *Auth) Authorize() {
 	default:
 		beego.Error("userData type unkown")
 	}
+
+	// find use by social Id used to login
 	err = models.DocFindOne(socialId, bson.M{}, &user, 0)
-	if err != nil && err != models.DocNotFound {
+	switch {
+	case err != nil && err != models.DocNotFound:
 		beego.Error(err)
 		c.Redirect("/login", 302)
 		return
-	}
-	if err == models.DocNotFound {
+	case err == models.DocNotFound:
 		// c should be new user
 		c.Redirect("/signup", 302)
 		return
-	} else {
-		// delete newUserData if existent user
-		c.DelSession("newUserData")
-		// update last login
-		q := bson.M{user.Bson("Id"): user.Id}
-		fld := bson.M{user.Bson("LastLoginAt"): time.Now()}
-		vErrors, err := models.DocUpdate(q, &user, fld)
-		//@todo handle login error properly with messages
-		if err != nil {
-			beego.Error("Auth.Authorize DocUpdate ", err)
-			c.Redirect("/login", 302)
-			return
-		}
-		if vErrors != nil {
-			beego.Warn(vErrors)
-			c.Redirect("/login", 302)
-			return
-		}
-		redirectUrl := c.GetSession("redirectAfter")
-		if redirectUrl == nil {
-			redirectUrl = "/"
-		}
-		c.SetSession("uid", user.Id.Hex())
-		c.Redirect(redirectUrl.(string), 302)
 	}
+
+	// delete newUserData if existent user
+	c.DelSession("newUserData")
+	// update last login
+	q := bson.M{user.Bson("Id"): user.Id}
+	fld := bson.M{user.Bson("LastLoginAt"): time.Now()}
+	// udpate user last login time
+	vErrors, err := models.DocUpdate(q, &user, fld)
+	//@todo handle login error properly with messages
+	if err != nil {
+		beego.Error("Auth.Authorize DocUpdate ", err)
+		c.Redirect("/login", 302)
+		return
+	}
+	if vErrors != nil {
+		beego.Warn(vErrors)
+		c.Redirect("/login", 302)
+		return
+	}
+	redirectUrl := c.GetSession("redirectAfter")
+	if redirectUrl == nil {
+		redirectUrl = "/"
+	}
+	c.SetSession("uid", user.Id.Hex())
+	c.Redirect(redirectUrl.(string), 302)
 
 }

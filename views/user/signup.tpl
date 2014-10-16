@@ -16,7 +16,7 @@
         Username: <input type="text" name="username" value="[[ .User.UserName ]]"/><br/>
         Email: <input type="email" name="email" value="[[ .User.Email ]]"/><br/>
         Birthday: <input type="date" name="bday" value="[[ .User.Bday ]]"/><br/>
-        <input type="radio" name="gender" value="male" [[ if eq .User.Gender "male" ]] checked [[ end ]]/>Make<br/>
+        <input type="radio" name="gender" value="male" [[ if eq .User.Gender "male" ]] checked [[ end ]]/>Male<br/>
         <input type="radio" name="gender" value="female" [[ if eq .User.Gender "female" ]] checked [[ end ]]/>Female<br/>
         City: should be select
         <input type="submit" value="SignUp"/>

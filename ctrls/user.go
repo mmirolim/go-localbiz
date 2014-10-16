@@ -76,7 +76,6 @@ func (c *User) SignUpProc() {
 		beego.Error("newUserData unkown type")
 		return
 	}
-
 	c.TplNames = "user/signup.tpl"
 
 	formMap := c.Ctx.Request.PostForm

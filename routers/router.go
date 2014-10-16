@@ -14,7 +14,7 @@ func IsAuth(ctx *context.Context) {
 	}
 }
 
-// most of aspects should be in filters, ctrls will be shorter
+// @todo most of aspects should be in filters, ctrls will be shorter
 func init() {
 	beego.Router("/p/:city/:bizType", &ctrls.Home{}, "get:Category")
 	beego.Router("/"+ctrls.FoodService{}.Slug()+"/:slug", &ctrls.FoodService{})
@@ -22,7 +22,7 @@ func init() {
 	beego.Router("/logout", &ctrls.Auth{}, "get:Logout")
 	beego.Router("/auth/?:socialNet", &ctrls.Auth{}, "*:Authorize")
 	beego.Router("/user/:username", &ctrls.User{})
-	beego.Router("/user/edit/:id", &ctrls.User{}, "*:Edit")
+	beego.Router("/user/edit/:id", &ctrls.User{}, "get:Edit;post:Edit")
 	beego.Router("/signup", &ctrls.User{}, "get:SignUp;post:SignUpProc")
 	beego.Router("/", &ctrls.Home{})
 
