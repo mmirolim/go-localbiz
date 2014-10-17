@@ -2,7 +2,7 @@ package ctrls
 
 import (
 	"github.com/astaxie/beego"
-	"github.com/mmirolim/yalp-go/models"
+	M "github.com/mmirolim/yalp-go/models"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -32,11 +32,11 @@ func (c *Home) Category() {
 	bizType := c.Ctx.Input.Param(":bizType")
 
 	var catList []List
-	foodService := new(models.FoodService)
+	foodService := new(M.FoodService)
 	switch bizType {
 	case foodService.GetC():
 		beego.Warn("foodservice type")
-		err = models.DocCountDistinct(foodService, bson.M{"lang": c.Lang, "city": city},
+		err = M.DocCountDistinct(foodService, bson.M{"lang": c.Lang, "city": city},
 			"types",
 			&catList,
 			60)

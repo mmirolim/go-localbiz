@@ -1,8 +1,8 @@
 <ul>
-    <li>[[ .User.FirstName ]]</li>
-    <li>[[ .User.LastName ]]</li>
-    <li>[[ .User.Name ]]</li>
-    <li>[[ .User.UserName ]]</li>
-    <li>[[ .User.Gender ]]</li>
+    <li>[[ .user.FirstName ]]</li>
+    <li>[[ .user.LastName ]]</li>
+    <li>[[ .user.Name ]]</li>
+    <li>[[ .user.UserName ]]</li>
+    <li>[[ .user.Gender ]]</li>
 </ul>
-<a href="http://yalp.go/user/edit/[[ .Uid ]]">Edit</a>
+<a href="http://yalp.go/user/edit">Edit</a>

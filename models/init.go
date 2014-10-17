@@ -31,15 +31,6 @@ var (
 	reg_email      = regexp.MustCompile("[\\w!#$%&'*+/=?^_`{|}~-]+(?:\\.[\\w!#$%&'*+/=?^_`{|}~-]+)*@(?:[\\w](?:[\\w-]*[\\w])?\\.)+[a-zA-Z0-9](?:[\\w-]*[\\w])?")
 )
 
-type VMsg struct {
-	Msg    string
-	Params map[string]interface{}
-}
-
-type BsonData struct {
-	Raw bson.Raw
-}
-
 type DocModel interface {
 	GetC() string
 	GetIndex() []mgo.Index
@@ -47,203 +38,6 @@ type DocModel interface {
 	SetDefaults()
 	Validate(s string, bs bson.M) VErrors
 	GetLocation() Geo
-}
-
-type VErrors map[string][]VMsg
-
-// define model structs
-type Geo struct {
-	Type        string    `bson:"type"`
-	Coordinates []float32 `bson:"coordinates"`
-}
-
-type Address struct {
-	City     string `bson:"city"`
-	District string `bson:"district"`
-	Street   string `bson:"street"`
-	RefLoc   string `bson:"ref_loc"`
-}
-
-type NearStats struct {
-	NScanned  uint32  `bson:"nscanned"`
-	ObjLoaded uint32  `bson:"objectsLoaded"`
-	AvrDis    float32 `bson:"avgDistance"`
-	MaxDis    float32 `bson:"maxDistance"`
-	time      int32   `bson:"time"`
-}
-
-// struct to store Near FoodServices result from mongo
-type Near struct {
-	Results bson.Raw
-	Stats   NearStats
-	Ok      float32
-}
-
-// validator func type
-type VFunc func(val interface{}) (VMsg, bool)
-
-func check(s string, e error) bool {
-	if e != nil {
-		beego.Error(s + e.Error())
-		return true
-	}
-	return false
-}
-
-func panicOnErr(e error) {
-	if e != nil {
-		panic(e)
-	}
-}
-
-// @todo embeded structs should be added bson and field dictionaries should
-func BsonFieldDic(d DocModel) map[string]string {
-	m := make(map[string]string)
-	// should be pointer here
-	s := reflect.ValueOf(d).Elem()
-	typeOfT := s.Type()
-	for i := 0; i < s.NumField(); i++ {
-		f := typeOfT.Field(i)
-		key := f.Tag.Get("bson")
-		key = strings.Replace(key, " ", "", -1)
-		key = strings.Split(key, ",")[0]
-		m[key] = f.Name
-	}
-	return m
-}
-
-func FieldBsonDic(d DocModel) map[string]string {
-	m := make(map[string]string)
-	// should be pointer here
-	s := reflect.ValueOf(d).Elem()
-	typeOfT := s.Type()
-	for i := 0; i < s.NumField(); i++ {
-		f := typeOfT.Field(i)
-		v := f.Tag.Get("bson")
-		v = strings.Replace(v, " ", "", -1)
-		v = strings.Split(v, ",")[0]
-		m[f.Name] = v
-	}
-
-	return m
-
-}
-
-// @todo refactor to improve performance
-func (v *VErrors) Set(key string, msg VMsg) {
-	if msg.Msg == "" {
-		return
-	}
-	vErrors := *v
-	if len(vErrors) == 0 {
-		vErrors = make(map[string][]VMsg)
-	}
-	vErrors[key] = append(vErrors[key], msg)
-	*v = vErrors
-}
-func (v *VErrors) T(t i18n.TranslateFunc) map[string][]string {
-	m := make(map[string][]string)
-	if len(*v) == 0 {
-		return m
-	}
-	for k, vm := range *v {
-		for _, msg := range vm {
-			// translate field names
-			msg.Params["Field"] = t(msg.Params["Field"].(string))
-			s := t(msg.Msg, msg.Params)
-			m[k] = append(m[k], s)
-		}
-	}
-	return m
-}
-
-type Validator struct {
-	Scenario string // should be create, update
-	Errors   VErrors
-}
-
-func (v *Validator) Required(p interface{}, k string) {
-	failed := false
-	switch v := p.(type) {
-	case string:
-		if v == "" {
-			failed = true
-		}
-	case int:
-		if v == 0 {
-			failed = true
-		}
-	default:
-		// @todo impl for other types
-		failed = true
-	}
-	if failed {
-		v.Errors.Set(k, VMsg{Msg: "valid_required", Params: map[string]interface{}{"Field": k}})
-	}
-}
-
-func (v *Validator) AlphaDash(p, k string) {
-	if reg_alpha_dash.MatchString(p) {
-		v.Errors.Set(k, VMsg{Msg: "valid_alpha_dash", Params: map[string]interface{}{"Field": k}})
-	}
-}
-
-func (v *Validator) Size(p, k string, min, max int) {
-	if len(p) < min || len(p) > max {
-		v.Errors.Set(k, VMsg{Msg: "valid_string_size", Params: map[string]interface{}{"Field": k, "Min": min, "Max": max}})
-	}
-}
-
-func (v *Validator) Email(p, k string) {
-	if !reg_email.MatchString(p) {
-		v.Errors.Set(k, VMsg{Msg: "valid_email", Params: map[string]interface{}{"Field": k}})
-	}
-}
-
-func (v *Validator) Range(p int, k string, min, max int) {
-	if p < min || p > max {
-		v.Errors.Set(k, VMsg{Msg: "valid_range", Params: map[string]interface{}{"Field": k, "Min": min, "Max": max}})
-	}
-}
-
-func (v *Validator) NotContainStr(p, k string, ss []string) {
-	for _, s := range ss {
-		if p == s {
-			v.Errors.Set(k, VMsg{Msg: "valid_not_contain", Params: map[string]interface{}{"Field": k, "Str": s}})
-			break
-		}
-	}
-}
-
-// check in mongo collection if unique
-func (v *Validator) UniqueDoc(k, c string, b bson.M) {
-	sess := MgoSession.Copy()
-	defer sess.Close()
-
-	collection := sess.DB(MongoDbName).C(c)
-	n, err := collection.Find(b).Select(bson.M{k: 1}).Count()
-	if err == nil && n > 0 {
-		v.Errors.Set(k, VMsg{Msg: "valid_unique", Params: map[string]interface{}{"Field": k}})
-	}
-}
-
-// fmt field helper
-func FmtString(prop string, actions []string) string {
-	for _, v := range actions {
-		switch v {
-		case "ToLower":
-			prop = strings.ToLower(prop)
-		case "TrimSpace":
-			prop = strings.TrimSpace(prop)
-		case "Title":
-			prop = strings.Title(prop)
-		case "ToTitle":
-			prop = strings.ToTitle(prop) // Unicode ToUpper
-		case "ToUpper":
-			prop = strings.ToUpper(prop)
-		}
-	}
-	return prop
 }
 
 func InitConnection() {
@@ -258,7 +52,7 @@ func InitConnection() {
 
 	// all models
 	var user User
-	var foodService FoodService
+	var fs FoodService
 	FieldDic = make(map[string]map[string]map[string]string)
 	FieldDic["User"] = make(map[string]map[string]string)
 	// define maps bsonToUser and userToBson field names
@@ -266,7 +60,7 @@ func InitConnection() {
 	FieldDic["User"]["BsonField"] = BsonFieldDic(&user)
 
 	// init indexes of models and panic if something wrong
-	err = DocInitIndex(&foodService)
+	err = DocInitIndex(&fs)
 	panicOnErr(err)
 	err = DocInitIndex(&user)
 	panicOnErr(err)
@@ -275,41 +69,10 @@ func InitConnection() {
 
 	// register Model structs for gob encoding
 	gob.Register(user)
-	gob.Register(foodService)
-	gob.Register(FacebookData{})
-	gob.Register(GoogleData{})
+	gob.Register(fs)
+	gob.Register(FBData{})
+	gob.Register(GGData{})
 
-}
-
-func genCacheKey(table string, method string, queries ...interface{}) string {
-	var key string
-	for _, v := range queries {
-		key += ":" + fmt.Sprint(v)
-	}
-	key = strings.Replace(key, "} {", "},{", -1)
-	key = strings.Replace(key, " ", ":", -1)
-
-	return strings.ToLower(cachePrefix + table + ":" + method + key)
-}
-
-func cacheIsExist(key string) bool {
-	return Cache.IsExist(key)
-}
-
-func cachePut(key string, data interface{}, timeout int64) error {
-	// serialize only structs and bytes
-	// prepare bytes buffer
-	bCache := new(bytes.Buffer)
-	encCache := gob.NewEncoder(bCache)
-	err := encCache.Encode(data)
-	Cache.Put(key, bCache, timeout)
-	return err
-}
-
-func cacheGet(key string, data interface{}) error {
-	decCache := gob.NewDecoder(bytes.NewBuffer(Cache.Get(key).([]byte)))
-	err := decCache.Decode(data)
-	return err
 }
 
 func DocInitIndex(m DocModel) error {
@@ -472,4 +235,255 @@ func DocUpdate(q bson.M, m DocModel, flds bson.M) (VErrors, error) {
 
 	return vErrors, err
 
+}
+
+type Validator struct {
+	Scenario string // should be create, update
+	Errors   VErrors
+}
+
+func (v *Validator) Required(p interface{}, k string) {
+	failed := false
+	switch v := p.(type) {
+	case string:
+		if v == "" {
+			failed = true
+		}
+	case int:
+		if v == 0 {
+			failed = true
+		}
+	default:
+		// @todo impl for other types
+		failed = true
+	}
+	if failed {
+		v.Errors.Set(k, VMsg{Msg: "valid_required", Params: map[string]interface{}{"Field": k}})
+	}
+}
+
+func (v *Validator) AlphaDash(p, k string) {
+	if reg_alpha_dash.MatchString(p) {
+		v.Errors.Set(k, VMsg{Msg: "valid_alpha_dash", Params: map[string]interface{}{"Field": k}})
+	}
+}
+
+func (v *Validator) Size(p, k string, min, max int) {
+	if len(p) < min || len(p) > max {
+		v.Errors.Set(k, VMsg{Msg: "valid_string_size", Params: map[string]interface{}{"Field": k, "Min": min, "Max": max}})
+	}
+}
+
+func (v *Validator) Email(p, k string) {
+	if !reg_email.MatchString(p) {
+		v.Errors.Set(k, VMsg{Msg: "valid_email", Params: map[string]interface{}{"Field": k}})
+	}
+}
+
+func (v *Validator) Range(p int, k string, min, max int) {
+	if p < min || p > max {
+		v.Errors.Set(k, VMsg{Msg: "valid_range", Params: map[string]interface{}{"Field": k, "Min": min, "Max": max}})
+	}
+}
+
+func (v *Validator) NotContainStr(p, k string, ss []string) {
+	for _, s := range ss {
+		if p == s {
+			v.Errors.Set(k, VMsg{Msg: "valid_not_contain", Params: map[string]interface{}{"Field": k, "Str": s}})
+			break
+		}
+	}
+}
+
+// check in mongo collection if unique
+func (v *Validator) UniqueDoc(k, c string, b bson.M) {
+	sess := MgoSession.Copy()
+	defer sess.Close()
+
+	collection := sess.DB(MongoDbName).C(c)
+	n, err := collection.Find(b).Select(bson.M{k: 1}).Count()
+	if err == nil && n > 0 {
+		v.Errors.Set(k, VMsg{Msg: "valid_unique", Params: map[string]interface{}{"Field": k}})
+	}
+}
+
+func FormToBson(f map[string][]string) bson.M {
+
+	b := make(bson.M)
+
+	for k, v := range f {
+		// exclude _xsrf field
+		if v[0] != "" && k != "_xsrf" {
+			b[k] = v[0]
+		}
+	}
+
+	return b
+}
+
+// fmt field helper
+func FmtString(prop string, actions []string) string {
+	for _, v := range actions {
+		switch v {
+		case "ToLower":
+			prop = strings.ToLower(prop)
+		case "TrimSpace":
+			prop = strings.TrimSpace(prop)
+		case "Title":
+			prop = strings.Title(prop)
+		case "ToTitle":
+			prop = strings.ToTitle(prop) // Unicode ToUpper
+		case "ToUpper":
+			prop = strings.ToUpper(prop)
+		}
+	}
+	return prop
+}
+
+func genCacheKey(table string, method string, queries ...interface{}) string {
+	var key string
+	for _, v := range queries {
+		key += ":" + fmt.Sprint(v)
+	}
+	key = strings.Replace(key, "} {", "},{", -1)
+	key = strings.Replace(key, " ", ":", -1)
+
+	return strings.ToLower(cachePrefix + table + ":" + method + key)
+}
+
+func cacheIsExist(key string) bool {
+	return Cache.IsExist(key)
+}
+
+func cachePut(key string, data interface{}, timeout int64) error {
+	// serialize only structs and bytes
+	// prepare bytes buffer
+	bCache := new(bytes.Buffer)
+	encCache := gob.NewEncoder(bCache)
+	err := encCache.Encode(data)
+	Cache.Put(key, bCache, timeout)
+	return err
+}
+
+func cacheGet(key string, data interface{}) error {
+	decCache := gob.NewDecoder(bytes.NewBuffer(Cache.Get(key).([]byte)))
+	err := decCache.Decode(data)
+	return err
+}
+
+type VMsg struct {
+	Msg    string
+	Params map[string]interface{}
+}
+
+type BsonData struct {
+	Raw bson.Raw
+}
+
+type VErrors map[string][]VMsg
+
+// define model structs
+type Geo struct {
+	Type        string    `bson:"type"`
+	Coordinates []float32 `bson:"coordinates"`
+}
+
+type Address struct {
+	City     string `bson:"city"`
+	District string `bson:"district"`
+	Street   string `bson:"street"`
+	RefLoc   string `bson:"ref_loc"`
+}
+
+type NearStats struct {
+	NScanned  uint32  `bson:"nscanned"`
+	ObjLoaded uint32  `bson:"objectsLoaded"`
+	AvrDis    float32 `bson:"avgDistance"`
+	MaxDis    float32 `bson:"maxDistance"`
+	time      int32   `bson:"time"`
+}
+
+// struct to store Near FoodServices result from mongo
+type Near struct {
+	Results bson.Raw
+	Stats   NearStats
+	Ok      float32
+}
+
+// validator func type
+type VFunc func(val interface{}) (VMsg, bool)
+
+func check(s string, e error) bool {
+	if e != nil {
+		beego.Error(s + e.Error())
+		return true
+	}
+	return false
+}
+
+func panicOnErr(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
+
+// @todo embeded structs should be added bson and field dictionaries should
+func BsonFieldDic(d DocModel) map[string]string {
+	m := make(map[string]string)
+	// should be pointer here
+	s := reflect.ValueOf(d).Elem()
+	typeOfT := s.Type()
+	for i := 0; i < s.NumField(); i++ {
+		f := typeOfT.Field(i)
+		key := f.Tag.Get("bson")
+		key = strings.Replace(key, " ", "", -1)
+		key = strings.Split(key, ",")[0]
+		m[key] = f.Name
+	}
+	return m
+}
+
+func FieldBsonDic(d DocModel) map[string]string {
+	m := make(map[string]string)
+	// should be pointer here
+	s := reflect.ValueOf(d).Elem()
+	typeOfT := s.Type()
+	for i := 0; i < s.NumField(); i++ {
+		f := typeOfT.Field(i)
+		v := f.Tag.Get("bson")
+		v = strings.Replace(v, " ", "", -1)
+		v = strings.Split(v, ",")[0]
+		m[f.Name] = v
+	}
+
+	return m
+
+}
+
+// @todo refactor to improve performance
+func (v *VErrors) Set(key string, msg VMsg) {
+	if msg.Msg == "" {
+		return
+	}
+	vErrors := *v
+	if len(vErrors) == 0 {
+		vErrors = make(map[string][]VMsg)
+	}
+	vErrors[key] = append(vErrors[key], msg)
+	*v = vErrors
+}
+func (v *VErrors) T(t i18n.TranslateFunc) map[string][]string {
+	m := make(map[string][]string)
+	if len(*v) == 0 {
+		return m
+	}
+	for k, vm := range *v {
+		for _, msg := range vm {
+			// translate field names
+			msg.Params["Field"] = t(msg.Params["Field"].(string))
+			s := t(msg.Msg, msg.Params)
+			m[k] = append(m[k], s)
+		}
+	}
+	return m
 }

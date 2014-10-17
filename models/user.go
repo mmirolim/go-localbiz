@@ -82,8 +82,8 @@ var (
 	}
 )
 
-type FacebookData struct {
-	Id          string `bson:"id" json:"id"`
+type FBData struct {
+	ID          string `bson:"id" json:"id"`
 	Link        string `bson:"link" json:"link"`
 	Name        string `bson:"name" json:"name"`
 	FirstName   string `bson:"first_name" json:"first_name"`
@@ -94,8 +94,8 @@ type FacebookData struct {
 	AccessToken string `bson:"access_token"`
 }
 
-type GoogleData struct {
-	Id         string `bson:"id" json:"id"`
+type GGData struct {
+	ID         string `bson:"id" json:"id"`
 	ObjectType string `bson:"objectType" json:"objectType"`
 	Kind       string `bson:"kind" json:"kind"`
 	Etag       string `bson:"etag" json:"etag"`
@@ -126,28 +126,28 @@ type GoogleData struct {
 // @important  if Field naming changes validation also should be changed
 //@todo fix validation for email now requiring
 type User struct {
-	Id           bson.ObjectId `bson:"_id,omitempty" json:"id,omitempty"`
-	UserName     string        `bson:"username" json:"username"`
-	Email        string        `bson:"email" json:"email"`
-	Name         string        `bson:"name" json:"name"`
-	City         string        `bson:"city" json:"city"`
-	FirstName    string        `bson:"first_name" json:"first_name"`
-	LastName     string        `bson:"last_name" json:"last_name"`
-	Gender       string        `bson:"gender" json:"gender"`
-	Locale       string        `bson:"locale" json:"locale" json:"locale"`
-	LastLoginAt  time.Time     `bson:"last_login_at" json:"last_login_at"`
-	Role         int           `bson:"role" json:"role"`
-	Bday         time.Time     `bson:"bday,omitempty" json:"bday,omitempty"`
-	FacebookData `bson:"fb_data" json:"fb_data"`
-	GoogleData   `bson:"gg_data" json:"gg_data"`
-	Address      `bson:"address" json:"address"`
-	Geo          `bson:"loc,omitempty" json:"loc,omitempty"`
-	Deleted      bool      `bson:"deleted" json:"deleted"`
-	UpdatedAt    time.Time `bson:"updated_at" json:"updated_at"`
-	CreatedAt    time.Time `bson:"created_at" json:"created_at"`
-	CreatedBy    string    `bson:"created_by" json:"created_by"`
-	UpdatedBy    string    `bson:"updated_by" json:"updated_by"`
-	IsAdmin      bool      `bson:"is_admin,omitempty" json:"is_admin,omitempty"`
+	ID          bson.ObjectId `bson:"_id,omitempty" json:"id,omitempty"`
+	UserName    string        `bson:"username" json:"username"`
+	Email       string        `bson:"email" json:"email"`
+	Name        string        `bson:"name" json:"name"`
+	City        string        `bson:"city" json:"city"`
+	FirstName   string        `bson:"first_name" json:"first_name"`
+	LastName    string        `bson:"last_name" json:"last_name"`
+	Gender      string        `bson:"gender" json:"gender"`
+	Locale      string        `bson:"locale" json:"locale" json:"locale"`
+	LastLoginAt time.Time     `bson:"last_login_at" json:"last_login_at"`
+	Role        int           `bson:"role" json:"role"`
+	Bday        time.Time     `bson:"bday,omitempty" json:"bday,omitempty"`
+	FBData      `bson:"fb_data" json:"fb_data"`
+	GGData      `bson:"gg_data" json:"gg_data"`
+	Address     `bson:"address" json:"address"`
+	Geo         `bson:"loc,omitempty" json:"loc,omitempty"`
+	Deleted     bool      `bson:"deleted" json:"deleted"`
+	UpdatedAt   time.Time `bson:"updated_at" json:"updated_at"`
+	CreatedAt   time.Time `bson:"created_at" json:"created_at"`
+	CreatedBy   string    `bson:"created_by" json:"created_by"`
+	UpdatedBy   string    `bson:"updated_by" json:"updated_by"`
+	IsAdmin     bool      `bson:"is_admin,omitempty" json:"is_admin,omitempty"`
 }
 
 func (u User) GetC() string {
@@ -175,8 +175,8 @@ func (u *User) FmtFields() {
 
 }
 
-func (u *User) InitWithFb(fb FacebookData) {
-	u.FacebookData = fb
+func (u *User) InitWithFb(fb FBData) {
+	u.FBData = fb
 	u.UserName = fb.UserName
 	u.FirstName = fb.FirstName
 	u.LastName = fb.LastName
@@ -185,8 +185,8 @@ func (u *User) InitWithFb(fb FacebookData) {
 	u.Gender = fb.Gender
 }
 
-func (u *User) InitWithGg(gg GoogleData) {
-	u.GoogleData = gg
+func (u *User) InitWithGg(gg GGData) {
+	u.GGData = gg
 	u.FirstName = gg.Name.GivenName
 	u.LastName = gg.Name.FamilyName
 	u.SetName(u.FirstName, u.LastName)
@@ -214,6 +214,60 @@ func (u *User) SetDefaults() {
 
 func (u *User) SetName(firstName, lastName string) {
 	u.Name = strings.TrimSpace(firstName) + " " + strings.TrimSpace(lastName)
+}
+
+func (u *User) SetUserName(s string) VErrors {
+	v := make(VErrors)
+	n := u.Bson("UserName")
+	var o User
+	err := DocFindOne(bson.M{n: s}, bson.M{n: 1}, &o, 0)
+	// if there is no user with such username assign username
+	// else return validation error
+	if err == DocNotFound {
+		u.UserName = s
+	} else if o.UserName != "" {
+		v.Set(n, VMsg{"valid_username_taken", map[string]interface{}{"Field": n}})
+	} else {
+		v.Set(n, VMsg{"server_error", map[string]interface{}{}})
+	}
+	return v
+}
+
+func (u *User) SetBday(s string) VErrors {
+	// date format layout year 2006, month 01 and day is 0
+	v := make(VErrors)
+	f := u.Bson("Bday")
+	// layout or format of date ISO
+	l := "2006-01-02"
+	t, e := time.Parse(l, s)
+	if e != nil {
+		v.Set(f, VMsg{"valid_bday", map[string]interface{}{"Field": f}})
+	} else {
+		u.Bday = t
+	}
+	return v
+}
+
+func (u *User) ParseForm(m map[string][]string) {
+	B := u.Bson
+	// @todo think about useing reflection
+	for k, v := range m {
+		switch k {
+		case B("UserName"):
+			u.UserName = v[0]
+		case B("FirstName"):
+			u.FirstName = v[0]
+		case B("LastName"):
+			u.LastName = v[0]
+		case B("Email"):
+			u.Email = v[0]
+		case B("Gender"):
+			u.Gender = v[0]
+		case B("Bday"):
+			// @todo handle err properly
+			_ = u.SetBday(v[0])
+		}
+	}
 }
 
 // return bson field name from cached FieldDic, convenience func

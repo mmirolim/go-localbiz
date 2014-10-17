@@ -69,7 +69,7 @@ var (
 )
 
 type FoodService struct {
-	Id         bson.ObjectId `bson:"_id"`
+	ID         bson.ObjectId `bson:"_id"`
 	Address    `bson:"address"`
 	Name       string   `bson:"name"`
 	City       string   `bson:"city" json:"city"`

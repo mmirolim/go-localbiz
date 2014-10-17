@@ -8,48 +8,19 @@ import (
 )
 
 var (
-	APP         string
-	AppVer      string
-	IsPro       bool
-	langTypes   map[string]string
-	defaultLang string
-	T           i18n.TranslateFunc
+	APP       string
+	AppVer    string
+	IsPro     bool
+	langTypes map[string]string
+	dLang     string
+	T         i18n.TranslateFunc
 )
 
-// convenience type for i18n
-type tm map[string]interface{}
-
-// base router with global settings for all other routers
-type baseController struct {
-	beego.Controller
-	Lang string
-}
-
-func check(s string, e error) bool {
-	if e != nil {
-		beego.Error(s + e.Error())
-		return true
-	}
-
-	return false
-}
-
-func panicOnErr(e error) {
-	if e != nil {
-		panic(e)
-	}
-}
-
-func GetUrl(ss ...string) string {
-	var u string
-	// need empty first element to append first word with slash
-	// ex /city/fs/one
-	str := []string{""}
-	for _, v := range ss {
-		str = append(str, strings.Replace(v, " ", "_", -1))
-	}
-	u = strings.ToLower(strings.Join(str, "/"))
-	return u
+func InitApp() {
+	initLocales()
+	// register getUrl func
+	// @todo use default url builder
+	beego.AddFuncMap("getUrl", GetUrl)
 }
 
 // implement Prepare method for base router
@@ -78,7 +49,7 @@ func initLocales() {
 	// Init lang list
 	langs := strings.Split(beego.AppConfig.String("lang::types"), "|")
 	names := strings.Split(beego.AppConfig.String("lang::names"), "|")
-	defaultLang = beego.AppConfig.String("lang::default")
+	dLang = beego.AppConfig.String("lang::default")
 
 	langTypes = make(map[string]string)
 	for i, v := range langs {
@@ -94,23 +65,25 @@ func initLocales() {
 func (c *baseController) setLangVer() {
 	var lang string
 	// Check URL arguments.
-	urlLang := strings.ToLower(c.Input().Get("lang"))
+	uLang := strings.ToLower(c.Input().Get("lang"))
 
 	// Get language info from 'Accept-Language'
-	acceptLang := strings.ToLower(c.Ctx.Request.Header.Get("Accept-Language"))
+	aLang := strings.ToLower(c.Ctx.Request.Header.Get("Accept-Language"))
 
-	Tfn, err := i18n.Tfunc(urlLang, acceptLang, defaultLang)
+	Tfn, err := i18n.Tfunc(uLang, aLang, dLang)
 	// set T func in ctrls
 	T = Tfn
 	check("initLocales i18n.Tfunc ", err)
 	// register translation func with langs
 	beego.AddFuncMap("T", Tfn)
-	if langTypes[urlLang] != "" {
-		lang = urlLang
-	} else if langTypes[acceptLang] != "" {
-		lang = acceptLang
-	} else {
-		lang = defaultLang
+
+	switch {
+	case langTypes[uLang] != "":
+		lang = uLang
+	case langTypes[aLang] != "":
+		lang = aLang
+	default:
+		lang = dLang
 	}
 
 	// Set lang properties
@@ -119,8 +92,37 @@ func (c *baseController) setLangVer() {
 	c.Data["CurrentLang"] = langTypes[lang]
 }
 
-func InitApp() {
-	initLocales()
-	// register getUrl func
-	beego.AddFuncMap("getUrl", GetUrl)
+// convenience type for i18n
+type tm map[string]interface{}
+
+// base router with global settings for all other routers
+type baseController struct {
+	beego.Controller
+	Lang string
+}
+
+func GetUrl(ss ...string) string {
+	var u string
+	// need empty first element to append first word with slash
+	// ex /city/fs/one
+	str := []string{""}
+	for _, v := range ss {
+		str = append(str, strings.Replace(v, " ", "_", -1))
+	}
+	u = strings.ToLower(strings.Join(str, "/"))
+	return u
+}
+func check(s string, e error) bool {
+	if e != nil {
+		beego.Error(s + e.Error())
+		return true
+	}
+
+	return false
+}
+
+func panicOnErr(e error) {
+	if e != nil {
+		panic(e)
+	}
 }

@@ -4,12 +4,12 @@ import (
 	"strings"
 
 	"github.com/astaxie/beego"
-	"github.com/mmirolim/yalp-go/models"
+	M "github.com/mmirolim/yalp-go/models"
 	"gopkg.in/mgo.v2/bson"
 )
 
 type List struct {
-	Id    string `bson:"_id"`
+	ID    string `bson:"_id"`
 	Count uint16 `bson:"count"`
 }
 
@@ -25,18 +25,18 @@ func (c *FoodService) Get() {
 	c.Data["Lang"] = c.Lang
 	// get FoodService by slug
 	slug := c.Ctx.Input.Param(":slug")
-	var fd models.FoodService
-	err := models.DocFindOne(bson.M{"slug": slug}, bson.M{}, &fd, 60)
+	var fd M.FoodService
+	err := M.DocFindOne(bson.M{"slug": slug}, bson.M{}, &fd, 60)
 	if err != nil {
 		beego.Error(err)
 		c.Abort("404")
 	}
-	var near models.Near
-	err = models.DocFindNear(1, 1000, &fd, &near, 60)
+	var near M.Near
+	err = M.DocFindNear(1, 1000, &fd, &near, 60)
 	check("FS Get -> ", err)
 	var fds []struct {
 		Dis float32
-		Obj models.FoodService
+		Obj M.FoodService
 	}
 	err = near.Results.Unmarshal(&fds)
 	check("FS Get raw unmarshal -> ", err)
@@ -66,22 +66,22 @@ func (c *FoodService) Category() {
 	}
 
 	// cache category list
-	var fds []models.FoodService
+	var fds []M.FoodService
 	// get all places with cat and city
-	err = models.DocFind(q, bson.M{"name": 1, "slug": 1}, &models.FoodService{}, &fds, 60)
+	err = M.DocFind(q, bson.M{"name": 1, "slug": 1}, &M.FoodService{}, &fds, 60)
 	check("Category FInd ->", err)
 
 	count := len(fds)
 
 	var catList []List
-	err = models.DocCountDistinct(&models.FoodService{}, bson.M{"lang": c.Lang}, "types", &catList, 60)
+	err = M.DocCountDistinct(&M.FoodService{}, bson.M{"lang": c.Lang}, "types", &catList, 60)
 	check("FS->category DocCountDistinct -> ", err)
 	c.TplNames = "food-service/category.tpl"
 
 	c.Data["Data"] = struct {
 		Category string
 		City     string
-		FdsList  []models.FoodService
+		FdsList  []M.FoodService
 		Count    int
 		CatList  []List
 	}{

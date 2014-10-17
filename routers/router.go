@@ -18,11 +18,11 @@ func IsAuth(ctx *context.Context) {
 func init() {
 	beego.Router("/p/:city/:bizType", &ctrls.Home{}, "get:Category")
 	beego.Router("/"+ctrls.FoodService{}.Slug()+"/:slug", &ctrls.FoodService{})
-	beego.Router("/login/?:socialNet", &ctrls.Auth{}, "get:Login")
+	beego.Router("/login/?:provider", &ctrls.Auth{}, "get:Login")
 	beego.Router("/logout", &ctrls.Auth{}, "get:Logout")
-	beego.Router("/auth/?:socialNet", &ctrls.Auth{}, "*:Authorize")
+	beego.Router("/auth/?:provider", &ctrls.Auth{}, "*:Authorize")
 	beego.Router("/user/:username", &ctrls.User{})
-	beego.Router("/user/edit/:id", &ctrls.User{}, "get:Edit;post:Edit")
+	beego.Router("/user/edit", &ctrls.User{}, "get:Edit;post:EditProc")
 	beego.Router("/signup", &ctrls.User{}, "get:SignUp;post:SignUpProc")
 	beego.Router("/", &ctrls.Home{})
 

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"github.com/astaxie/beego"
 	"github.com/golang/oauth2"
-	"github.com/mmirolim/yalp-go/models"
+	M "github.com/mmirolim/yalp-go/models"
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"time"
@@ -46,14 +46,14 @@ func (c *Auth) Login() {
 		c.Redirect("/", 302)
 		return
 	}
-	socialNet := c.Ctx.Input.Param(":socialNet")
-	if socialNet == "" {
+	prv := c.Ctx.Input.Param(":provider")
+	if prv == "" {
 		c.TplNames = "login.tpl"
-		loginUrl := "/login/"
-		c.Data["Data"] = struct {
-			UrlFb, UrlG string
+		l := "/login/"
+		c.Data["url"] = struct {
+			FB, GG string
 		}{
-			loginUrl + facebook, loginUrl + google,
+			l + facebook, l + google,
 		}
 		return
 	}
@@ -63,17 +63,18 @@ func (c *Auth) Login() {
 		c.SetSession("redirectAfter", referer)
 	}
 	// @todo add csrf tokens as state
-	var urlR string
-	state := c.XsrfToken()
-	switch socialNet {
+	var url string
+	s := c.XsrfToken()
+	switch prv {
 	case facebook:
-		urlR = facebookConf.AuthCodeURL(state, "online", "auto")
+		url = facebookConf.AuthCodeURL(s, "online", "auto")
 	case google:
-		urlR = googleConf.AuthCodeURL(state, "online", "auto")
+		url = googleConf.AuthCodeURL(s, "online", "auto")
 	default:
-		urlR = "/login"
+		url = "/login"
 	}
-	c.Redirect(urlR, 302)
+
+	c.Redirect(url, 302)
 }
 
 func (c *Auth) Logout() {
@@ -84,50 +85,50 @@ func (c *Auth) Logout() {
 func (c *Auth) Authorize() {
 	c.EnableRender = false
 	//@todo add msg to what was wrong
-	socialNet := c.Ctx.Input.Param(":socialNet")
+	prv := c.Ctx.Input.Param(":provider")
 	// confirm identity
 	state := c.Input().Get("state")
 	// @todo remove social net check
 	// temp fix for google login
-	if state != c.XsrfToken() && socialNet != "google" {
+	if state != c.XsrfToken() && prv != "google" {
 		beego.Warn("Auth.Authorize state mismatch")
 		c.Abort("403")
 	}
 	code := c.Input().Get("code")
-	if code == "" || socialNet == "" {
+	if code == "" || prv == "" {
 		c.Ctx.Redirect(302, "/")
 		return
 	}
 	// declare var required for oauth providers
-	var providerConf *oauth2.Config
-	var userInfoUrl string
-	var userData interface{}
-	var userFbData models.FacebookData
-	var userGgData models.GoogleData
-	switch socialNet {
+	var pConf *oauth2.Config
+	var userURL string
+	var uData interface{}
+	var uFBData M.FBData
+	var uGGData M.GGData
+	switch prv {
 	case facebook:
-		userData = &userFbData
-		providerConf = facebookConf
-		userInfoUrl = "https://graph.facebook.com/me"
+		uData = &uFBData
+		pConf = facebookConf
+		userURL = "https://graph.facebook.com/me"
 	case google:
-		userData = &userGgData
-		providerConf = googleConf
-		userInfoUrl = "https://www.googleapis.com/plus/v1/people/me"
+		uData = &uGGData
+		pConf = googleConf
+		userURL = "https://www.googleapis.com/plus/v1/people/me"
 	default:
 		c.Abort("400")
 	}
 	// exchange code to access token
-	token, err := providerConf.Exchange(code)
+	token, err := pConf.Exchange(code)
 	if err != nil {
 		c.Redirect("/", 302)
 		return
 	}
 	// get public information
-	t := providerConf.NewTransport()
+	t := pConf.NewTransport()
 	t.SetToken(token)
 	client := http.Client{Transport: t}
-	resp, err := client.Get(userInfoUrl)
-	defer resp.Body.Close()
+	r, err := client.Get(userURL)
+	defer r.Body.Close()
 
 	if err != nil {
 		beego.Warn(err)
@@ -135,37 +136,37 @@ func (c *Auth) Authorize() {
 		return
 	}
 
-	err = json.NewDecoder(resp.Body).Decode(userData)
+	err = json.NewDecoder(r.Body).Decode(uData)
 	if err != nil {
 		beego.Error(err)
 		c.Redirect("/", 302)
 		return
 	}
 
-	var user models.User
-	var socialId bson.M
+	var user M.User
+	var sid bson.M
 
 	// search by social id
-	switch userData.(type) {
-	case *models.FacebookData:
-		socialId = bson.M{"fb_data.id": userData.(*models.FacebookData).Id}
+	switch uData.(type) {
+	case *M.FBData:
+		sid = bson.M{"fb_data.id": uData.(*M.FBData).ID}
 		// get value and typecast to proper data type
-		c.SetSession("newUserData", *userData.(*models.FacebookData))
-	case *models.GoogleData:
-		socialId = bson.M{"gg_data.id": userData.(*models.GoogleData).Id}
-		c.SetSession("newUserData", *userData.(*models.GoogleData))
+		c.SetSession("newUserData", *uData.(*M.FBData))
+	case *M.GGData:
+		sid = bson.M{"gg_data.id": uData.(*M.GGData).ID}
+		c.SetSession("newUserData", *uData.(*M.GGData))
 	default:
 		beego.Error("userData type unkown")
 	}
 
 	// find use by social Id used to login
-	err = models.DocFindOne(socialId, bson.M{}, &user, 0)
+	err = M.DocFindOne(sid, bson.M{}, &user, 0)
 	switch {
-	case err != nil && err != models.DocNotFound:
+	case err != nil && err != M.DocNotFound:
 		beego.Error(err)
 		c.Redirect("/login", 302)
 		return
-	case err == models.DocNotFound:
+	case err == M.DocNotFound:
 		// c should be new user
 		c.Redirect("/signup", 302)
 		return
@@ -174,26 +175,26 @@ func (c *Auth) Authorize() {
 	// delete newUserData if existent user
 	c.DelSession("newUserData")
 	// update last login
-	q := bson.M{user.Bson("Id"): user.Id}
-	fld := bson.M{user.Bson("LastLoginAt"): time.Now()}
+	q := bson.M{user.Bson("ID"): user.ID}
+	f := bson.M{user.Bson("LastLoginAt"): time.Now()}
 	// udpate user last login time
-	vErrors, err := models.DocUpdate(q, &user, fld)
+	verrs, err := M.DocUpdate(q, &user, f)
 	//@todo handle login error properly with messages
 	if err != nil {
 		beego.Error("Auth.Authorize DocUpdate ", err)
 		c.Redirect("/login", 302)
 		return
 	}
-	if vErrors != nil {
-		beego.Warn(vErrors)
+	if verrs != nil {
+		beego.Warn(verrs)
 		c.Redirect("/login", 302)
 		return
 	}
-	redirectUrl := c.GetSession("redirectAfter")
-	if redirectUrl == nil {
-		redirectUrl = "/"
+	rURL := c.GetSession("redirectAfter")
+	if rURL == nil {
+		rURL = "/"
 	}
-	c.SetSession("uid", user.Id.Hex())
-	c.Redirect(redirectUrl.(string), 302)
+	c.SetSession("uid", user.ID.Hex())
+	c.Redirect(rURL.(string), 302)
 
 }
