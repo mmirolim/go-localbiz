@@ -2,8 +2,11 @@ package models
 
 import (
 	"github.com/astaxie/beego"
+	"github.com/mmirolim/yalp-go/utils"
+	"github.com/nicksnyder/go-i18n/i18n"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"html/template"
 	"strings"
 	"time"
 )
@@ -246,6 +249,42 @@ func (u *User) SetBday(s string) VErrors {
 		u.Bday = t
 	}
 	return v
+}
+
+func (u *User) Form(a, m, x string, t i18n.TranslateFunc) template.HTML {
+	B := u.Bson
+	tag := utils.Html
+	type mp map[string]string
+	s := template.HTML("<form action=\"" + a + "\" method=\"" + m + "\">")
+
+	s += tag("label", mp{"for": B("FirstName"), "text": t(B("FirstName"))})
+	s += tag("input", mp{"type": "text", "name": B("FirstName"), "value": u.FirstName})
+
+	s += tag("label", mp{"for": B("LastName"), "text": t(B("LastName"))})
+	s += tag("input", mp{"type": "text", "name": B("LastName"), "value": u.LastName})
+
+	s += tag("label", mp{"for": B("Email"), "text": t(B("Email"))})
+	s += tag("input", mp{"type": "email", "name": B("Email"), "value": u.Email})
+
+	s += tag("label", mp{"for": B("Bday"), "text": t(B("Bday"))})
+	s += tag("input", mp{"type": "date", "name": B("Bday"), "value": u.Bday.String()})
+
+	s += tag("label", mp{"for": B("Gender"), "text": t(B("Gender"))})
+	var cm, cf = "", ""
+	if u.Gender == "male" {
+		cm = "true"
+	} else {
+		cf = "true"
+	}
+	s += tag("input", mp{"type": "radio", "name": B("Gender"), "value": t("male"), "checked": cm})
+	s += tag("input", mp{"type": "radio", "name": B("Gender"), "value": t("female"), "checked": cf})
+
+	s += template.HTML(x)
+
+	s += tag("input", mp{"type": "submit", "name": "save", "value": t("save")})
+
+	s += template.HTML("</form>")
+	return template.HTML(s)
 }
 
 func (u *User) ParseForm(m map[string][]string) {

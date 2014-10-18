@@ -22,7 +22,6 @@ func init() {
 
 }
 
-
 func IsAuth(ctx *context.Context) {
 	uid := ctx.Input.Session("uid")
 	beego.Warn("Filter isAuth")
@@ -30,4 +29,3 @@ func IsAuth(ctx *context.Context) {
 		ctx.Redirect(302, "/login")
 	}
 }
-

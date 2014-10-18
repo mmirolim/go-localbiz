@@ -3,8 +3,8 @@ package ctrls
 import (
 	"strings"
 
-	M "github.com/mmirolim/yalp-go/models"
 	"github.com/astaxie/beego"
+	M "github.com/mmirolim/yalp-go/models"
 	"github.com/nicksnyder/go-i18n/i18n"
 	"gopkg.in/mgo.v2/bson"
 )

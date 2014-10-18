@@ -138,9 +138,9 @@ func (c *User) Edit() {
 		c.Abort("404")
 	}
 
-	c.Data["csrfToken"] = template.HTML(c.XsrfFormHtml())
 	c.Data["uid"] = AuthUser.ID.Hex()
-	c.Data["user"] = u
+	// @todo istead hard coding use url helper
+	c.Data["formUser"] = u.Form("/user/edit", "post", c.XsrfFormHtml(), T)
 }
 
 func (c *User) EditProc() {
