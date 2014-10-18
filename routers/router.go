@@ -6,14 +6,6 @@ import (
 	"github.com/mmirolim/yalp-go/ctrls"
 )
 
-func IsAuth(ctx *context.Context) {
-	uid := ctx.Input.Session("uid")
-	beego.Warn("Filter isAuth")
-	if uid == nil {
-		ctx.Redirect(302, "/login")
-	}
-}
-
 // @todo most of aspects should be in filters, ctrls will be shorter
 func init() {
 	beego.Router("/p/:city/:bizType", &ctrls.Home{}, "get:Category")
@@ -26,6 +18,16 @@ func init() {
 	beego.Router("/signup", &ctrls.User{}, "get:SignUp;post:SignUpProc")
 	beego.Router("/", &ctrls.Home{})
 
-	beego.InsertFilter("/*/edit/*", beego.BeforeRouter, IsAuth)
+	beego.InsertFilter("/*/edit", beego.BeforeRouter, IsAuth)
 
 }
+
+
+func IsAuth(ctx *context.Context) {
+	uid := ctx.Input.Session("uid")
+	beego.Warn("Filter isAuth")
+	if uid == nil {
+		ctx.Redirect(302, "/login")
+	}
+}
+

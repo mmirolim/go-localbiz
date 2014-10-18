@@ -129,19 +129,17 @@ func (c *User) SignUpProc() {
 func (c *User) Edit() {
 	c.TplNames = "user/edit.tpl"
 	// uid not nil checked in isAuth filter
-	uid := c.GetSession("uid")
 	var u M.User
 	B := u.Bson
-	uidObj := bson.ObjectIdHex(uid.(string))
 	// @todo dont cache if user edits page Or invalidate cache on update
-	err := M.DocFindOne(bson.M{B("ID"): uidObj}, bson.M{}, &u, 0)
+	err := M.DocFindOne(bson.M{B("ID"): AuthUser.ID}, bson.M{}, &u, 0)
 	if err != nil {
 		beego.Error(err)
 		c.Abort("404")
 	}
 
 	c.Data["csrfToken"] = template.HTML(c.XsrfFormHtml())
-	c.Data["uid"] = uid
+	c.Data["uid"] = AuthUser.ID.Hex()
 	c.Data["user"] = u
 }
 
@@ -149,14 +147,12 @@ func (c *User) EditProc() {
 	// only update own data
 	c.TplNames = "user/edit.tpl"
 	// uid not nil checked in isAuth filter
-	uid := c.GetSession("uid")
 	var u M.User
-	uidObj := bson.ObjectIdHex(uid.(string))
 	B := u.Bson
 
 	f := c.Ctx.Request.PostForm
 	c.Data["csrfToken"] = template.HTML(c.XsrfFormHtml())
-	c.Data["uid"] = uid
+	c.Data["uid"] = AuthUser.ID.Hex()
 	u.ParseForm(f)
 	c.Data["user"] = u
 
@@ -171,7 +167,7 @@ func (c *User) EditProc() {
 		bm[B("Bday")] = u.Bday
 	}
 
-	vErrs, err := M.DocUpdate(bson.M{B("ID"): uidObj}, &u, bm)
+	vErrs, err := M.DocUpdate(bson.M{B("ID"): AuthUser.ID}, &u, bm)
 	//@todo handle login error properly with messages
 	if err != nil {
 		beego.Error("User.EditProc DocUpdate ", err)
@@ -184,7 +180,7 @@ func (c *User) EditProc() {
 	}
 
 	// get updated user object
-	err = M.DocFindOne(bson.M{B("ID"): uidObj}, bson.M{}, &u, 0)
+	err = M.DocFindOne(bson.M{B("ID"): AuthUser.ID}, bson.M{}, &u, 0)
 	if err != nil {
 		beego.Error("User.EditProc ", err)
 		c.Abort("500")

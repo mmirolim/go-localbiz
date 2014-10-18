@@ -3,8 +3,10 @@ package ctrls
 import (
 	"strings"
 
+	M "github.com/mmirolim/yalp-go/models"
 	"github.com/astaxie/beego"
 	"github.com/nicksnyder/go-i18n/i18n"
+	"gopkg.in/mgo.v2/bson"
 )
 
 var (
@@ -14,6 +16,7 @@ var (
 	langTypes map[string]string
 	dLang     string
 	T         i18n.TranslateFunc
+	AuthUser  M.User
 )
 
 func InitApp() {
@@ -43,6 +46,16 @@ func (c *baseController) Prepare() {
 	// set language
 	c.setLangVer()
 
+	// set Authenticated User available for all controllers
+	uid := c.GetSession("uid")
+	if uid != nil {
+		err := M.DocFindOne(bson.M{AuthUser.Bson("ID"): bson.ObjectIdHex(uid.(string))}, bson.M{}, &AuthUser, 0)
+		if err != nil {
+			beego.Error("BaseCtrl.Prepare DocFindOne ", err)
+			c.Abort("500")
+		}
+	}
+	c.Data["AuthUser"] = AuthUser
 }
 
 func initLocales() {

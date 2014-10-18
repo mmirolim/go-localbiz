@@ -40,9 +40,8 @@ func (c *Auth) Login() {
 	// check oauth2 configurations for all providers
 	panicOnErr(errFb)
 	panicOnErr(errG)
-	uid := c.GetSession("uid")
 	// if user authenticated redirect
-	if uid != nil {
+	if AuthUser.ID.Hex() != "" {
 		c.Redirect("/", 302)
 		return
 	}
