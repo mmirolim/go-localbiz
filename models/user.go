@@ -14,13 +14,11 @@ import (
 // roles admin = 1, editor = 2, tester = 3, client = 4, user = 5
 const (
 
-	// roles
-	_ = iota
-	roleAdmin
-	roleEditor
-	roleTester
-	roleClient
-	roleUser
+	roleAdmin = 1
+	roleEditor = 2
+	roleTester = 3
+	roleClient = 4
+	roleUser = 5
 )
 
 var (
@@ -382,4 +380,21 @@ func (u *User) Validate(s string, bs bson.M) VErrors {
 	}
 
 	return v.Errors
+}
+
+func (u *User) AllowBackend(id string) bool {
+	var user User
+	// @todo maybe cache query it will run on each adm path for each user
+	err := DocFindOne(bson.M{u.Bson("ID"): bson.ObjectIdHex(id)}, bson.M{}, &user, 0)
+	if err != nil {
+		beego.Error("BaseCtrl.Prepare DocFindOne ", err)
+		return false
+	}
+	r := [...]int{roleAdmin, roleEditor, roleTester}
+	for _, v := range r {
+		if user.Role == v {
+			return true
+		}
+	}
+	return false
 }
