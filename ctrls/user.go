@@ -140,7 +140,7 @@ func (c *User) Edit() {
 
 	c.Data["uid"] = AuthUser.ID.Hex()
 	// @todo istead hard coding use url helper
-	c.Data["formUser"] = u.Form("/user/edit", "post", c.XsrfFormHtml(), T)
+	c.Data["formUser"] = u.Form(UrlFor("User.Edit"), c.XsrfFormHtml(), T)
 }
 
 func (c *User) EditProc() {

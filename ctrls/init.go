@@ -14,9 +14,10 @@ var (
 	AppVer    string
 	IsPro     bool
 	langTypes map[string]string
-	dLang     string
+	dLang = beego.AppConfig.String("lang::default")
 	T         i18n.TranslateFunc
 	AuthUser  M.User
+	UrlFor = beego.UrlFor
 )
 
 func InitApp() {
@@ -62,7 +63,6 @@ func initLocales() {
 	// Init lang list
 	langs := strings.Split(beego.AppConfig.String("lang::types"), "|")
 	names := strings.Split(beego.AppConfig.String("lang::names"), "|")
-	dLang = beego.AppConfig.String("lang::default")
 
 	langTypes = make(map[string]string)
 	for i, v := range langs {
@@ -77,12 +77,18 @@ func initLocales() {
 // set lang to use
 func (c *baseController) setLangVer() {
 	var lang string
-	// Check URL arguments.
+	// Check URL arguments if no set as default.
 	uLang := strings.ToLower(c.Input().Get("lang"))
-
+	if uLang == "" {
+		uLang = dLang
+	}
 	// Get language info from 'Accept-Language'
 	aLang := strings.ToLower(c.Ctx.Request.Header.Get("Accept-Language"))
-
+	if len(aLang) > 4 && langTypes[aLang[:5]] != "" {
+		aLang = aLang[:5]
+	} else {
+		aLang = ""
+	}
 	Tfn, err := i18n.Tfunc(uLang, aLang, dLang)
 	// set T func in ctrls
 	T = Tfn

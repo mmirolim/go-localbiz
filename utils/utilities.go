@@ -5,18 +5,20 @@ import (
 	"strings"
 )
 
+type html struct {
+
+}
+
 // @todo make it handle select and other tags
 func Html(n string, m map[string]string) template.HTML {
-	var h, a string
-	n = strings.TrimSpace(n)
-	h = "<" + n
+	var a string
+	h := "<" + strings.TrimSpace(n)
 	for k, v := range m {
 		// create attributes
 		switch {
 		case k == "checked" && v == "true":
 			a += " " + strings.TrimSpace(k) + " "
-		case k == "text" || k == "checked" && v != "true":
-		default:
+		case k != "text" || k != "checked":
 			a += " " + strings.TrimSpace(k) + "=\"" + template.HTMLEscapeString(strings.TrimSpace(v)) + "\""
 		}
 	}

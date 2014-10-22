@@ -251,11 +251,11 @@ func (u *User) SetBday(s string) VErrors {
 	return v
 }
 
-func (u *User) Form(a, m, x string, t i18n.TranslateFunc) template.HTML {
+func (u *User) Form(a, x string, t i18n.TranslateFunc) template.HTML {
 	B := u.Bson
 	tag := utils.Html
 	type mp map[string]string
-	s := template.HTML("<form action=\"" + a + "\" method=\"" + m + "\">")
+	s := template.HTML("<form action=\"" + a + "\" method=\"post\">")
 
 	s += tag("label", mp{"for": B("FirstName"), "text": t(B("FirstName"))})
 	s += tag("input", mp{"type": "text", "name": B("FirstName"), "value": u.FirstName})

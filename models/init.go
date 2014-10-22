@@ -488,4 +488,3 @@ func (v *VErrors) T(t i18n.TranslateFunc) map[string][]string {
 	return m
 }
 
-// @todo create html gen helper func html(m map[string]string)
