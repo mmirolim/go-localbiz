@@ -30,6 +30,18 @@
         "translation": "фамилия"
     },
     {
+        "id": "email",
+        "translation": "email"
+    },
+    {
+        "id": "gender",
+        "translation": "пол"
+    },
+    {
+        "id": "bday",
+        "translation": "дата рождения"
+    },
+    {
         "id": "valid_required",
         "translation": "поле {{ .Field }} обязательно для заполнения"
     },

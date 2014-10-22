@@ -30,6 +30,18 @@
         "translation": "family name"
     },
     {
+        "id": "email",
+        "translation": "email"
+    },
+    {
+        "id": "gender",
+        "translation": "gender"
+    },
+    {
+        "id": "bday",
+        "translation": "birthday"
+    },
+    {
         "id": "valid_required",
         "translation": "{{ .Field }} should not be empty"
     },

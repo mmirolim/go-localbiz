@@ -14,7 +14,7 @@ var (
 	AppVer    string
 	IsPro     bool
 	langTypes map[string]string
-	dLang = beego.AppConfig.String("lang::default")
+	dLang = beego.AppConfig.String("lang::default") // set default lang
 	T         i18n.TranslateFunc
 	AuthUser  M.User
 	UrlFor = beego.UrlFor
@@ -119,7 +119,7 @@ type baseController struct {
 	beego.Controller
 	Lang string
 }
-
+// @todo should not be used instead use beego UrlFor
 func GetUrl(ss ...string) string {
 	var u string
 	// need empty first element to append first word with slash
@@ -131,6 +131,7 @@ func GetUrl(ss ...string) string {
 	u = strings.ToLower(strings.Join(str, "/"))
 	return u
 }
+
 func check(s string, e error) bool {
 	if e != nil {
 		beego.Error(s + e.Error())
