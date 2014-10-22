@@ -74,11 +74,11 @@ type FoodService struct {
 	Name       string   `bson:"name"`
 	City       string   `bson:"city" json:"city"`
 	Desc       string   `bson:"desc"`
-	DressCode  string   `bson:"dress_code"`
+	DressCode  string   `bson:"drcode"`
 	Fax        string   `bson:"fax"`
 	Email      string   `bson:"email"`
-	OrderPhone string   `bson:"order_phone"`
-	WorkHours  string   `bson:"work_hours"`
+	OrderPhone string   `bson:"ord_tel"`
+	WorkHours  string   `bson:"whours"`
 	Halls      string   `bson:"halls"`
 	Company    string   `bson:"company"`
 	Cabins     string   `bson:"cabins"`
@@ -86,22 +86,22 @@ type FoodService struct {
 	Sits       int16    `bson:"sits"`
 	Music      []string `bson:"music"`
 	Features   []string `bson:"features"`
-	Parking    string   `bson:"parking"`
+	Parking    string   `bson:"park"`
 	Site       string   `bson:"site"`
 	Phones     []string `bson:"tels"`
-	Terminal   string   `bson:"terminal"`
+	Terminal   string   `bson:"term"`
 	Types      []string `bson:"types"`
-	Transport  string   `bson:"trasport"`
+	Transport  string   `bson:"tras"`
 	GoodFor    []string `bson:"good_for"`
 	Price      string   `bson:"price"`
 	Lang       string   `bson:"lang"`
 	Geo        `bson:"loc,omitempty"`
 	Slug       string    `bson:"slug"`
-	Deleted    bool      `bson:"deleted"`
-	UpdatedAt  time.Time `bson:"updated_at"`
-	CreatedAt  time.Time `bson:"created_at"`
-	CreatedBy  string    `bson:"created_by"`
-	UpdatedBy  string    `bson:"updated_by"`
+	Deleted    bool      `bson:"del"`
+	UpdatedAt  time.Time `bson:"up_at"`
+	CreatedAt  time.Time `bson:"cr_at"`
+	CreatedBy  string    `bson:"cr_by"`
+	UpdatedBy  string    `bson:"up_by"`
 }
 
 func (f FoodService) GetC() string {

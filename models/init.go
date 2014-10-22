@@ -53,11 +53,16 @@ func InitConnection() {
 	// all models
 	var user User
 	var fs FoodService
+	var addr Address
 	FieldDic = make(map[string]map[string]map[string]string)
 	FieldDic["User"] = make(map[string]map[string]string)
+	FieldDic["Address"] = make(map[string]map[string]string)
+	FieldDic["FoodService"] = make(map[string]map[string]string)
 	// define maps bsonToUser and userToBson field names
 	FieldDic["User"]["FieldBson"] = FieldBsonDic(&user)
 	FieldDic["User"]["BsonField"] = BsonFieldDic(&user)
+	FieldDic["Address"]["FieldBson"] = FieldBsonDic(&addr)
+	FieldDic["FoodService"]["FieldBson"] = FieldBsonDic(&fs)
 
 	// init indexes of models and panic if something wrong
 	err = DocInitIndex(&fs)
@@ -70,6 +75,7 @@ func InitConnection() {
 	// register Model structs for gob encoding
 	gob.Register(user)
 	gob.Register(fs)
+	gob.Register(addr)
 	gob.Register(FBData{})
 	gob.Register(GGData{})
 
@@ -385,14 +391,14 @@ type VErrors map[string][]VMsg
 // define model structs
 type Geo struct {
 	Type        string    `bson:"type"`
-	Coordinates []float32 `bson:"coordinates"`
+	Coordinates []float32 `bson:"coordsinates"`
 }
 
 type Address struct {
 	City     string `bson:"city"`
-	District string `bson:"district"`
-	Street   string `bson:"street"`
-	RefLoc   string `bson:"ref_loc"`
+	District string `bson:"dist"`
+	Street   string `bson:"str"`
+	RefLoc   string `bson:"ref"`
 }
 
 type NearStats struct {
@@ -428,7 +434,8 @@ func panicOnErr(e error) {
 }
 
 // @todo embeded structs should be added bson and field dictionaries should
-func BsonFieldDic(d DocModel) map[string]string {
+// create map of bson tag to field name
+func BsonFieldDic(d interface {}) map[string]string {
 	m := make(map[string]string)
 	// should be pointer here
 	s := reflect.ValueOf(d).Elem()
@@ -442,8 +449,8 @@ func BsonFieldDic(d DocModel) map[string]string {
 	}
 	return m
 }
-
-func FieldBsonDic(d DocModel) map[string]string {
+// create map of field name to bson tags
+func FieldBsonDic(d interface {}) map[string]string {
 	m := make(map[string]string)
 	// should be pointer here
 	s := reflect.ValueOf(d).Elem()
@@ -455,7 +462,6 @@ func FieldBsonDic(d DocModel) map[string]string {
 		v = strings.Split(v, ",")[0]
 		m[f.Name] = v
 	}
-
 	return m
 
 }
@@ -488,3 +494,12 @@ func (v *VErrors) T(t i18n.TranslateFunc) map[string][]string {
 	return m
 }
 
+// get bson field name from cached FieldDic, convenience func
+func (u Address) Bson(f string) string {
+	b, ok := FieldDic["Address"]["FieldBson"][f]
+	if !ok {
+		beego.Error("Address.Bson key in FieldDic does not exists " + f)
+	}
+
+	return b
+}

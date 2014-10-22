@@ -21,134 +21,72 @@ const (
 	roleUser = 5
 )
 
-var (
-
-	// define indexes
-	userIndexes = []mgo.Index{
-		mgo.Index{
-			Key:    []string{"username"},
-			Unique: true,
-		},
-		mgo.Index{
-			Key: []string{"name"},
-		},
-		mgo.Index{
-			Key:    []string{"fb_data.id"},
-			Unique: true,
-		},
-		mgo.Index{
-			Key: []string{"gender"},
-		},
-
-		mgo.Index{
-			Key: []string{"role"},
-		},
-		mgo.Index{
-			Key: []string{"b_day"},
-		},
-
-		mgo.Index{
-			Key:    []string{"email"},
-			Unique: true,
-		},
-
-		mgo.Index{
-			Key: []string{"last_login_at"},
-		},
-
-		mgo.Index{
-			Key: []string{"$2dsphere:loc"},
-		},
-		mgo.Index{
-			Key: []string{"address.city", "name"},
-		},
-		mgo.Index{
-			Key: []string{"address.district", "name"},
-		},
-		mgo.Index{
-			Key: []string{"deleted"},
-		},
-		mgo.Index{
-			Key: []string{"updated_by"},
-		},
-		mgo.Index{
-			Key: []string{"updated_at"},
-		},
-		mgo.Index{
-			Key: []string{"created_at"},
-		},
-		mgo.Index{
-			Key: []string{"created_by"},
-		},
-	}
-)
-
 type FBData struct {
 	ID          string `bson:"id" json:"id"`
 	Link        string `bson:"link" json:"link"`
 	Name        string `bson:"name" json:"name"`
-	FirstName   string `bson:"first_name" json:"first_name"`
-	LastName    string `bson:"last_name" json:"last_name"`
+	FirstName   string `bson:"fname" json:"first_name"`
+	LastName    string `bson:"lname" json:"last_name"`
 	Gender      string `bson:"gender" json:"gender"`
-	UserName    string `bson:"username" json:"username"`
+	UserName    string `bson:"uname" json:"username"`
 	Locale      string `bson:"locale" json:"locale"`
-	AccessToken string `bson:"access_token"`
+	AccessToken string `bson:"token"`
 }
 
 type GGData struct {
 	ID         string `bson:"id" json:"id"`
-	ObjectType string `bson:"objectType" json:"objectType"`
+	ObjectType string `bson:"objt" json:"objectType"`
 	Kind       string `bson:"kind" json:"kind"`
 	Etag       string `bson:"etag" json:"etag"`
 	PlaceLived struct {
-		Value   string `bson:"value" json:"value"`
-		Primary bool   `bson:"primary" json:"primary"`
+		Value   string `bson:"v" json:"value"`
+		Primary bool   `bson:"pr" json:"primary"`
 	}
-	DisplayName string `bson:"displayName" json:"displayName"`
+	DisplayName string `bson:"dname" json:"displayName"`
 	Url         string `bson:"url" json:"url"`
 	Name        struct {
-		FamilyName string `bson:"familyName" json:"familyName"`
-		GivenName  string `bson:"givenName" json:"givenName"`
+		FamilyName string `bson:"lname" json:"familyName"`
+		GivenName  string `bson:"fname" json:"givenName"`
 	} `bson:"name" json:"name"`
 	Image struct {
 		Url       string `bson:"url" json:"url"`
-		IsDefault bool   `bson:"isDefault" json:"isDefault"`
+		IsDefault bool   `bson:"def" json:"isDefault"`
 	} `bson:"image" json:"image"`
-	FirstName   string `bson:"first_name" json:"first_name"`
-	LastName    string `bson:"last_name" json:"last_name"`
+	FirstName   string `bson:"fname" json:"first_name"`
+	LastName    string `bson:"lame" json:"last_name"`
 	Gender      string `bson:"gender" json:"gender"`
-	UserName    string `bson:"username" json:"username"`
-	Lang        string `bson:"language" json:"language"`
-	isPlusUser  string `bosn:"is_plus_user" json:"isPlusUser"`
-	Verified    bool   `bson:"verified" json:"verified"`
-	AccessToken string `bson:"access_token"`
+	UserName    string `bson:"uname" json:"username"`
+	Lang        string `bson:"lang" json:"language"`
+	isPlusUser  string `bosn:"pluser" json:"isPlusUser"`
+	Verified    bool   `bson:"vrd" json:"verified"`
+	AccessToken string `bson:"token"`
 }
 
 // @important  if Field naming changes validation also should be changed
 //@todo fix validation for email now requiring
 type User struct {
 	ID          bson.ObjectId `bson:"_id,omitempty" json:"id,omitempty"`
-	UserName    string        `bson:"username" json:"username"`
+	UserName    string        `bson:"uname" json:"username"`
 	Email       string        `bson:"email" json:"email"`
 	Name        string        `bson:"name" json:"name"`
 	City        string        `bson:"city" json:"city"`
-	FirstName   string        `bson:"first_name" json:"first_name"`
-	LastName    string        `bson:"last_name" json:"last_name"`
+	FirstName   string        `bson:"fname" json:"first_name"`
+	LastName    string        `bson:"lname" json:"last_name"`
 	Gender      string        `bson:"gender" json:"gender"`
 	Locale      string        `bson:"locale" json:"locale" json:"locale"`
-	LastLoginAt time.Time     `bson:"last_login_at" json:"last_login_at"`
+	LastLoginAt time.Time     `bson:"ll_at" json:"last_login_at"`
 	Role        int           `bson:"role" json:"role"`
 	Bday        time.Time     `bson:"bday,omitempty" json:"bday,omitempty"`
-	FBData      `bson:"fb_data" json:"fb_data"`
-	GGData      `bson:"gg_data" json:"gg_data"`
-	Address     `bson:"address" json:"address"`
+	FBData      `bson:"fbd" json:"fb_data"`
+	GGData      `bson:"ggd" json:"gg_data"`
+	Address     `bson:"addr" json:"address"`
 	Geo         `bson:"loc,omitempty" json:"loc,omitempty"`
-	Deleted     bool      `bson:"deleted" json:"deleted"`
-	UpdatedAt   time.Time `bson:"updated_at" json:"updated_at"`
-	CreatedAt   time.Time `bson:"created_at" json:"created_at"`
-	CreatedBy   string    `bson:"created_by" json:"created_by"`
-	UpdatedBy   string    `bson:"updated_by" json:"updated_by"`
-	IsAdmin     bool      `bson:"is_admin,omitempty" json:"is_admin,omitempty"`
+	Deleted     bool      `bson:"del" json:"deleted"`
+	UpdatedAt   time.Time `bson:"up_at" json:"updated_at"`
+	CreatedAt   time.Time `bson:"cr_at" json:"created_at"`
+	CreatedBy   string    `bson:"cr_by" json:"created_by"`
+	UpdatedBy   string    `bson:"up_by" json:"updated_by"`
+	IsAdmin     bool      `bson:"adm,omitempty" json:"is_admin,omitempty"`
 }
 
 func (u User) GetC() string {
@@ -156,7 +94,70 @@ func (u User) GetC() string {
 }
 
 func (u User) GetIndex() []mgo.Index {
-	return userIndexes
+	// define indexes
+	ub := u.Bson 
+	ab := Address{}.Bson
+	return []mgo.Index{
+		mgo.Index{
+			Key:    []string{ub("UserName")},
+			Unique: true,
+		},
+		mgo.Index{
+			Key: []string{ub("Name")},
+		},
+		mgo.Index{
+			Key:    []string{ub("FBData") + ".id"},
+			Unique: true,
+		},
+		mgo.Index{
+			Key:    []string{ub("GGData") + ".id"},
+			Unique: true,
+		},
+		mgo.Index{
+			Key: []string{ub("Gender")},
+		},
+
+		mgo.Index{
+			Key: []string{ub("Role")},
+		},
+		mgo.Index{
+			Key: []string{ub("Bday")},
+		},
+
+		mgo.Index{
+			Key:    []string{ub("Email")},
+			Unique: true,
+		},
+
+		mgo.Index{
+			Key: []string{ub("LastLoginAt")},
+		},
+
+		mgo.Index{
+			Key: []string{"$2dsphere:" + ub("Geo")},
+		},
+		mgo.Index{
+			Key: []string{ub("Address") + "." + ab("City"), ub("Name")},
+		},
+		mgo.Index{
+			Key: []string{ub("Address") + "." + ab("District"), ub("Name")},
+		},
+		mgo.Index{
+			Key: []string{ub("Deleted")},
+		},
+		mgo.Index{
+			Key: []string{ub("UpdatedBy")},
+		},
+		mgo.Index{
+			Key: []string{ub("UpdatedAt")},
+		},
+		mgo.Index{
+			Key: []string{ub("CreatedAt")},
+		},
+		mgo.Index{
+			Key: []string{ub("CreatedBy")},
+		},
+	}
 }
 
 func (u User) GetLocation() Geo {
@@ -307,7 +308,7 @@ func (u *User) ParseForm(m map[string][]string) {
 	}
 }
 
-// return bson field name from cached FieldDic, convenience func
+// get bson field name from cached FieldDic, convenience func
 func (u User) Bson(f string) string {
 	b, ok := FieldDic["User"]["FieldBson"][f]
 	if !ok {
@@ -316,7 +317,7 @@ func (u User) Bson(f string) string {
 
 	return b
 }
-
+// get field name from bson tag name
 func (u User) Field(b string) string {
 	f, ok := FieldDic["User"]["BsonField"][b]
 	if !ok {
