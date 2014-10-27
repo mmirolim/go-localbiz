@@ -48,8 +48,8 @@ func (f FoodService) GetC() string {
 }
 
 func (f FoodService) GetIndex() []mgo.Index {
-	B := Dic.Bson(&f)
-	AB := Dic.Bson(Address{})
+	B := f.Bson
+	AB := Address{}.Bson
 	return []mgo.Index{
 		mgo.Index{
 			Key: []string{B("Name")},
@@ -133,7 +133,12 @@ func (f *FoodService) Validate(s string, bs bson.M) VErrors {
 
 }
 
-// proxy to Dic
-func (fs *FoodService) Bson(f string) string {
-	return Dic.Bson(fs)(f)
+// get bson tag from field name
+func (fs FoodService) Bson(f string) string {
+	return Dic.FoodService.Bson(f)
+}
+
+// get field name from bson tag
+func (fs FoodService) Field(f string) string {
+	return Dic.FoodService.Field(f)
 }

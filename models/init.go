@@ -471,40 +471,27 @@ func NewBsonDic(d interface{}) BsonDic {
 
 }
 
-// get bson field name from cached FieldDic, convenience func
-func (d ModelDic) Bson(o interface{}) func(string) string {
-	t := strings.Split(reflect.TypeOf(o).String(), ".")
-	p := t[len(t)-1]
-	pE := "No Key in FieldToBson : "
-	switch p {
-	case "User":
-		return func(f string) string {
-			v, ok := d.User.FieldToBson[f]
-			if !ok {
-				panic(pE + f)
-			}
-			return v
-		}
-	case "FoodService":
-		return func(f string) string {
-			v, ok := d.FoodService.FieldToBson[f]
-			if !ok {
-				panic(pE + f)
-			}
-			return v
-		}
-	case "Address":
-		return func(f string) string {
-			v, ok := d.Address.FieldToBson[f]
-			if !ok {
-				panic(pE + f)
-			}
-			return v
-		}
-	default:
-		panic("No such type in Dic.Bson")
+func (b *BsonDic) Bson(f string) string {
+	v, ok := b.FieldToBson[f]
+	if !ok {
+		panic("No such key " + f + " in FieldToBson dic")
 	}
+	return v
+}
+func (b *BsonDic) Field(f string) string {
+	v, ok := b.BsonToField[f]
+	if !ok {
+		panic("No such key " + f + " in BsonToField dic")
+	}
+	return v
+}
 
+func (a Address) Bson(f string) string {
+	return Dic.Address.Bson(f)
+}
+
+func (a Address) Field(f string) string {
+	return Dic.Address.Field(f)
 }
 
 func (v *VErrors) Set(key string, msg VMsg) {
