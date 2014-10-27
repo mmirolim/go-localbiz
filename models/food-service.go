@@ -1,87 +1,27 @@
 package models
 
 import (
+	"github.com/astaxie/beego"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"strings"
 	"time"
 )
 
-var (
-	// define indexes
-	foodServiceIndexes = []mgo.Index{
-		mgo.Index{
-			Key: []string{"name"},
-		},
-		mgo.Index{
-			Key: []string{"lang", "-name"},
-		},
-		mgo.Index{
-			Key: []string{"city", "lang"},
-		},
-		mgo.Index{
-			Key: []string{"slug"},
-		},
-		mgo.Index{
-			Key:    []string{"slug", "lang"},
-			Unique: true,
-		},
-		mgo.Index{
-			Key: []string{"$2dsphere:loc"},
-		},
-		mgo.Index{
-			Key: []string{"price", "name"},
-		},
-		mgo.Index{
-			Key: []string{"good_for", "name"},
-		},
-		mgo.Index{
-			Key: []string{"music", "name"},
-		},
-		mgo.Index{
-			Key: []string{"features", "name"},
-		},
-		mgo.Index{
-			Key: []string{"types", "name"},
-		},
-		mgo.Index{
-			Key: []string{"address.city", "name"},
-		},
-		mgo.Index{
-			Key: []string{"address.district", "name"},
-		},
-		mgo.Index{
-			Key: []string{"deleted"},
-		},
-		mgo.Index{
-			Key: []string{"updated_by"},
-		},
-		mgo.Index{
-			Key: []string{"updated_at"},
-		},
-		mgo.Index{
-			Key: []string{"created_at"},
-		},
-		mgo.Index{
-			Key: []string{"created_by"},
-		},
-	}
-)
-
 type FoodService struct {
 	ID         bson.ObjectId `bson:"_id"`
-	Address    `bson:"address"`
+	Address    `bson:"addr"`
 	Name       string   `bson:"name"`
 	City       string   `bson:"city" json:"city"`
 	Desc       string   `bson:"desc"`
-	DressCode  string   `bson:"drcode"`
+	DressCode  string   `bson:"drc"`
 	Fax        string   `bson:"fax"`
 	Email      string   `bson:"email"`
-	OrderPhone string   `bson:"ord_tel"`
-	WorkHours  string   `bson:"whours"`
+	OrderPhone string   `bson:"ordtel"`
+	WorkHours  string   `bson:"whrs"`
 	Halls      string   `bson:"halls"`
-	Company    string   `bson:"company"`
-	Cabins     string   `bson:"cabins"`
+	Company    string   `bson:"comp"`
+	Cabins     string   `bson:"cabs"`
 	Cuisines   []string `bson:"cuisines"`
 	Sits       int16    `bson:"sits"`
 	Music      []string `bson:"music"`
@@ -91,7 +31,7 @@ type FoodService struct {
 	Phones     []string `bson:"tels"`
 	Terminal   string   `bson:"term"`
 	Types      []string `bson:"types"`
-	Transport  string   `bson:"tras"`
+	Transport  string   `bson:"tran"`
 	GoodFor    []string `bson:"good_for"`
 	Price      string   `bson:"price"`
 	Lang       string   `bson:"lang"`
@@ -109,7 +49,65 @@ func (f FoodService) GetC() string {
 }
 
 func (f FoodService) GetIndex() []mgo.Index {
-	return foodServiceIndexes
+	B := f.Bson
+	AB := Address{}.Bson
+	return []mgo.Index{
+		mgo.Index{
+			Key: []string{B("Name")},
+		},
+		mgo.Index{
+			Key: []string{B("Lang"), "-" + B("Name")},
+		},
+		mgo.Index{
+			Key: []string{B("City"), B("Lang")},
+		},
+		mgo.Index{
+			Key: []string{B("Slug")},
+		},
+		mgo.Index{
+			Key:    []string{B("Slug"), B("Lang")},
+			Unique: true,
+		},
+		mgo.Index{
+			Key: []string{"$2dsphere:loc"},
+		},
+		mgo.Index{
+			Key: []string{B("Price"), B("Name")},
+		},
+		mgo.Index{
+			Key: []string{B("GoodFor"), B("Name")},
+		},
+		mgo.Index{
+			Key: []string{B("Music"), B("Name")},
+		},
+		mgo.Index{
+			Key: []string{B("Features"), B("Name")},
+		},
+		mgo.Index{
+			Key: []string{B("Types"), B("Name")},
+		},
+		mgo.Index{
+			Key: []string{B("Address") + "." + AB("City"), B("Name")},
+		},
+		mgo.Index{
+			Key: []string{B("Address") + "." + AB("District"), B("Name")},
+		},
+		mgo.Index{
+			Key: []string{B("Deleted")},
+		},
+		mgo.Index{
+			Key: []string{B("UpdatedBy")},
+		},
+		mgo.Index{
+			Key: []string{B("UpdatedAt")},
+		},
+		mgo.Index{
+			Key: []string{B("CreatedAt")},
+		},
+		mgo.Index{
+			Key: []string{B("CreatedBy")},
+		},
+	}
 }
 
 func (f FoodService) GetLocation() Geo {
@@ -134,4 +132,23 @@ func (f *FoodService) Validate(s string, bs bson.M) VErrors {
 	_ = s
 	return vErrors
 
+}
+
+// get bson field name from cached FieldDic, convenience func
+func (f FoodService) Bson(fl string) string {
+	v, ok := FieldDic["FoodService"]["FieldBson"][fl]
+	if !ok {
+		beego.Error("User.Bson key in FieldDic does not exists " + fl)
+	}
+
+	return v
+}
+
+// get field name from bson tag name
+func (f FoodService) Field(b string) string {
+	v, ok := FieldDic["FoodService"]["BsonField"][b]
+	if !ok {
+		beego.Error("User.Field key in FieldDic does not exists " + b)
+	}
+	return v
 }

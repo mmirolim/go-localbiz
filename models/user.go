@@ -13,12 +13,11 @@ import (
 
 // roles admin = 1, editor = 2, tester = 3, client = 4, user = 5
 const (
-
-	roleAdmin = 1
+	roleAdmin  = 1
 	roleEditor = 2
 	roleTester = 3
 	roleClient = 4
-	roleUser = 5
+	roleUser   = 5
 )
 
 type FBData struct {
@@ -95,7 +94,7 @@ func (u User) GetC() string {
 
 func (u User) GetIndex() []mgo.Index {
 	// define indexes
-	ub := u.Bson 
+	ub := u.Bson
 	ab := Address{}.Bson
 	return []mgo.Index{
 		mgo.Index{
@@ -317,6 +316,7 @@ func (u User) Bson(f string) string {
 
 	return b
 }
+
 // get field name from bson tag name
 func (u User) Field(b string) string {
 	f, ok := FieldDic["User"]["BsonField"][b]

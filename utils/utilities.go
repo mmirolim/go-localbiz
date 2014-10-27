@@ -5,9 +5,6 @@ import (
 	"strings"
 )
 
-type html struct {
-
-}
 
 // @todo make it handle select and other tags
 func Html(n string, m map[string]string) template.HTML {

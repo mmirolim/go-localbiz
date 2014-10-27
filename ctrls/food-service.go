@@ -33,7 +33,7 @@ func (c *FoodService) Get() {
 	}
 	var near M.Near
 	err = M.DocFindNear(1, 1000, &fd, &near, 60)
-	check("FS Get -> ", err)
+	check("Ctrl.FS.Get -> ", err)
 	var fds []struct {
 		Dis float32
 		Obj M.FoodService

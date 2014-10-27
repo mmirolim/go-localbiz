@@ -14,10 +14,10 @@ var (
 	AppVer    string
 	IsPro     bool
 	langTypes map[string]string
-	dLang = beego.AppConfig.String("lang::default") // set default lang
+	dLang     = beego.AppConfig.String("lang::default") // set default lang
 	T         i18n.TranslateFunc
 	AuthUser  M.User
-	UrlFor = beego.UrlFor
+	UrlFor    = beego.UrlFor
 )
 
 func InitApp() {
@@ -119,6 +119,7 @@ type baseController struct {
 	beego.Controller
 	Lang string
 }
+
 // @todo should not be used instead use beego UrlFor
 func GetUrl(ss ...string) string {
 	var u string

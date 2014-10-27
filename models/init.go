@@ -63,7 +63,7 @@ func InitConnection() {
 	FieldDic["User"]["BsonField"] = BsonFieldDic(&user)
 	FieldDic["Address"]["FieldBson"] = FieldBsonDic(&addr)
 	FieldDic["FoodService"]["FieldBson"] = FieldBsonDic(&fs)
-
+	FieldDic["FoodService"]["BsonField"] = BsonFieldDic(&fs)
 	// init indexes of models and panic if something wrong
 	err = DocInitIndex(&fs)
 	panicOnErr(err)
@@ -391,7 +391,7 @@ type VErrors map[string][]VMsg
 // define model structs
 type Geo struct {
 	Type        string    `bson:"type"`
-	Coordinates []float32 `bson:"coordsinates"`
+	Coordinates []float32 `bson:"coordinates"`
 }
 
 type Address struct {
@@ -435,7 +435,7 @@ func panicOnErr(e error) {
 
 // @todo embeded structs should be added bson and field dictionaries should
 // create map of bson tag to field name
-func BsonFieldDic(d interface {}) map[string]string {
+func BsonFieldDic(d interface{}) map[string]string {
 	m := make(map[string]string)
 	// should be pointer here
 	s := reflect.ValueOf(d).Elem()
@@ -449,8 +449,9 @@ func BsonFieldDic(d interface {}) map[string]string {
 	}
 	return m
 }
+
 // create map of field name to bson tags
-func FieldBsonDic(d interface {}) map[string]string {
+func FieldBsonDic(d interface{}) map[string]string {
 	m := make(map[string]string)
 	// should be pointer here
 	s := reflect.ValueOf(d).Elem()
