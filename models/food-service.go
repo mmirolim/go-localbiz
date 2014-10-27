@@ -1,7 +1,6 @@
 package models
 
 import (
-	"github.com/astaxie/beego"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"strings"
@@ -49,8 +48,8 @@ func (f FoodService) GetC() string {
 }
 
 func (f FoodService) GetIndex() []mgo.Index {
-	B := f.Bson
-	AB := Address{}.Bson
+	B := Dic.Bson(&f)
+	AB := Dic.Bson(Address{})
 	return []mgo.Index{
 		mgo.Index{
 			Key: []string{B("Name")},
@@ -134,21 +133,7 @@ func (f *FoodService) Validate(s string, bs bson.M) VErrors {
 
 }
 
-// get bson field name from cached FieldDic, convenience func
-func (f FoodService) Bson(fl string) string {
-	v, ok := FieldDic["FoodService"]["FieldBson"][fl]
-	if !ok {
-		beego.Error("User.Bson key in FieldDic does not exists " + fl)
-	}
-
-	return v
-}
-
-// get field name from bson tag name
-func (f FoodService) Field(b string) string {
-	v, ok := FieldDic["FoodService"]["BsonField"][b]
-	if !ok {
-		beego.Error("User.Field key in FieldDic does not exists " + b)
-	}
-	return v
+// proxy to Dic
+func (fs *FoodService) Bson(f string) string {
+	return Dic.Bson(fs)(f)
 }

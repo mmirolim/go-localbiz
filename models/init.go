@@ -24,7 +24,7 @@ var (
 	Cache, errCache = cache.NewCache("redis", `{"conn":":6379"}`)
 	cachePrefix     = beego.AppConfig.String("cache::prefix")
 	DocNotFound     = mgo.ErrNotFound
-	FieldDic        map[string]map[string]map[string]string
+	Dic             ModelDic
 	T               = i18n.IdentityTfunc
 	// regex patters
 	reg_alpha_dash = regexp.MustCompile("[^\\d\\w-_]")
@@ -54,16 +54,9 @@ func InitConnection() {
 	var user User
 	var fs FoodService
 	var addr Address
-	FieldDic = make(map[string]map[string]map[string]string)
-	FieldDic["User"] = make(map[string]map[string]string)
-	FieldDic["Address"] = make(map[string]map[string]string)
-	FieldDic["FoodService"] = make(map[string]map[string]string)
-	// define maps bsonToUser and userToBson field names
-	FieldDic["User"]["FieldBson"] = FieldBsonDic(&user)
-	FieldDic["User"]["BsonField"] = BsonFieldDic(&user)
-	FieldDic["Address"]["FieldBson"] = FieldBsonDic(&addr)
-	FieldDic["FoodService"]["FieldBson"] = FieldBsonDic(&fs)
-	FieldDic["FoodService"]["BsonField"] = BsonFieldDic(&fs)
+	Dic.Address = NewBsonDic(&addr)
+	Dic.User = NewBsonDic(&user)
+	Dic.FoodService = NewBsonDic(&fs)
 	// init indexes of models and panic if something wrong
 	err = DocInitIndex(&fs)
 	panicOnErr(err)
@@ -433,10 +426,25 @@ func panicOnErr(e error) {
 	}
 }
 
+type BsonDic struct {
+	BsonToField map[string]string
+	FieldToBson map[string]string
+}
+
+type ModelDic struct {
+	User        BsonDic
+	FoodService BsonDic
+	Address     BsonDic
+}
+
 // @todo embeded structs should be added bson and field dictionaries should
 // create map of bson tag to field name
-func BsonFieldDic(d interface{}) map[string]string {
-	m := make(map[string]string)
+func NewBsonDic(d interface{}) BsonDic {
+
+	bs := BsonDic{
+		BsonToField: make(map[string]string),
+		FieldToBson: make(map[string]string),
+	}
 	// should be pointer here
 	s := reflect.ValueOf(d).Elem()
 	typeOfT := s.Type()
@@ -445,29 +453,60 @@ func BsonFieldDic(d interface{}) map[string]string {
 		key := f.Tag.Get("bson")
 		key = strings.Replace(key, " ", "", -1)
 		key = strings.Split(key, ",")[0]
-		m[key] = f.Name
+		bs.BsonToField[key] = f.Name
 	}
-	return m
-}
 
-// create map of field name to bson tags
-func FieldBsonDic(d interface{}) map[string]string {
-	m := make(map[string]string)
 	// should be pointer here
-	s := reflect.ValueOf(d).Elem()
-	typeOfT := s.Type()
+	s = reflect.ValueOf(d).Elem()
+	typeOfT = s.Type()
 	for i := 0; i < s.NumField(); i++ {
 		f := typeOfT.Field(i)
 		v := f.Tag.Get("bson")
 		v = strings.Replace(v, " ", "", -1)
 		v = strings.Split(v, ",")[0]
-		m[f.Name] = v
+		bs.FieldToBson[f.Name] = v
 	}
-	return m
+
+	return bs
 
 }
 
-// @todo refactor to improve performance
+// get bson field name from cached FieldDic, convenience func
+func (d ModelDic) Bson(o interface{}) func(string) string {
+	t := strings.Split(reflect.TypeOf(o).String(), ".")
+	p := t[len(t)-1]
+	pE := "No Key in FieldToBson : "
+	switch p {
+	case "User":
+		return func(f string) string {
+			v, ok := d.User.FieldToBson[f]
+			if !ok {
+				panic(pE + f)
+			}
+			return v
+		}
+	case "FoodService":
+		return func(f string) string {
+			v, ok := d.FoodService.FieldToBson[f]
+			if !ok {
+				panic(pE + f)
+			}
+			return v
+		}
+	case "Address":
+		return func(f string) string {
+			v, ok := d.Address.FieldToBson[f]
+			if !ok {
+				panic(pE + f)
+			}
+			return v
+		}
+	default:
+		panic("No such type in Dic.Bson")
+	}
+
+}
+
 func (v *VErrors) Set(key string, msg VMsg) {
 	if msg.Msg == "" {
 		return
@@ -479,6 +518,7 @@ func (v *VErrors) Set(key string, msg VMsg) {
 	vErrors[key] = append(vErrors[key], msg)
 	*v = vErrors
 }
+
 func (v *VErrors) T(t i18n.TranslateFunc) map[string][]string {
 	m := make(map[string][]string)
 	if len(*v) == 0 {
@@ -493,14 +533,4 @@ func (v *VErrors) T(t i18n.TranslateFunc) map[string][]string {
 		}
 	}
 	return m
-}
-
-// get bson field name from cached FieldDic, convenience func
-func (u Address) Bson(f string) string {
-	b, ok := FieldDic["Address"]["FieldBson"][f]
-	if !ok {
-		beego.Error("Address.Bson key in FieldDic does not exists " + f)
-	}
-
-	return b
 }

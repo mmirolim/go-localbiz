@@ -94,8 +94,8 @@ func (u User) GetC() string {
 
 func (u User) GetIndex() []mgo.Index {
 	// define indexes
-	ub := u.Bson
-	ab := Address{}.Bson
+	ub := Dic.Bson(u)
+	ab := Dic.Bson(Address{})
 	return []mgo.Index{
 		mgo.Index{
 			Key:    []string{ub("UserName")},
@@ -219,7 +219,7 @@ func (u *User) SetName(firstName, lastName string) {
 
 func (u *User) SetUserName(s string) VErrors {
 	v := make(VErrors)
-	n := u.Bson("UserName")
+	n := Dic.Bson(u)("UserName")
 	var o User
 	err := DocFindOne(bson.M{n: s}, bson.M{n: 1}, &o, 0)
 	// if there is no user with such username assign username
@@ -237,7 +237,7 @@ func (u *User) SetUserName(s string) VErrors {
 func (u *User) SetBday(s string) VErrors {
 	// date format layout year 2006, month 01 and day is 0
 	v := make(VErrors)
-	f := u.Bson("Bday")
+	f := Dic.Bson(u)("Bday")
 	// layout or format of date ISO
 	l := "2006-01-02"
 	t, e := time.Parse(l, s)
@@ -250,7 +250,7 @@ func (u *User) SetBday(s string) VErrors {
 }
 
 func (u *User) Form(a, x string, t i18n.TranslateFunc) template.HTML {
-	B := u.Bson
+	B := Dic.Bson(u)
 	tag := utils.Html
 	type mp map[string]string
 	s := template.HTML("<form action=\"" + a + "\" method=\"post\">")
@@ -286,7 +286,7 @@ func (u *User) Form(a, x string, t i18n.TranslateFunc) template.HTML {
 }
 
 func (u *User) ParseForm(m map[string][]string) {
-	B := u.Bson
+	B := Dic.Bson(u)
 	// @todo think about useing reflection
 	for k, v := range m {
 		switch k {
@@ -307,25 +307,6 @@ func (u *User) ParseForm(m map[string][]string) {
 	}
 }
 
-// get bson field name from cached FieldDic, convenience func
-func (u User) Bson(f string) string {
-	b, ok := FieldDic["User"]["FieldBson"][f]
-	if !ok {
-		beego.Error("User.Bson key in FieldDic does not exists " + f)
-	}
-
-	return b
-}
-
-// get field name from bson tag name
-func (u User) Field(b string) string {
-	f, ok := FieldDic["User"]["BsonField"][b]
-	if !ok {
-		beego.Error("User.Field key in FieldDic does not exists " + b)
-	}
-	return f
-}
-
 // validate field of DocModel
 //@todo refactor to be dry
 func (u *User) Validate(s string, bs bson.M) VErrors {
@@ -333,7 +314,7 @@ func (u *User) Validate(s string, bs bson.M) VErrors {
 	v.Scenario = s
 	uMap := make(map[string]interface{})
 	// get bson field name
-	b := u.Bson
+	b := Dic.Bson(u)
 	// if validation scenario update validate
 	// only provided in bson map fields
 	// else validate user properties
@@ -386,7 +367,7 @@ func (u *User) Validate(s string, bs bson.M) VErrors {
 func (u *User) AllowBackend(id string) bool {
 	var user User
 	// @todo maybe cache query it will run on each adm path for each user
-	err := DocFindOne(bson.M{u.Bson("ID"): bson.ObjectIdHex(id)}, bson.M{}, &user, 0)
+	err := DocFindOne(bson.M{Dic.Bson(u)("ID"): bson.ObjectIdHex(id)}, bson.M{}, &user, 0)
 	if err != nil {
 		beego.Error("BaseCtrl.Prepare DocFindOne ", err)
 		return false
@@ -398,4 +379,9 @@ func (u *User) AllowBackend(id string) bool {
 		}
 	}
 	return false
+}
+
+// proxy to model dic
+func (u *User) Bson(f string) string {
+	return Dic.Bson(u)(f)
 }
