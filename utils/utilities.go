@@ -12,9 +12,9 @@ func Html(n string, m map[string]string) template.HTML {
 	for k, v := range m {
 		// create attributes
 		switch {
-		case k == "checked" && v == "true":
+		case (k == "checked" || k == "selected") && v == "true":
 			a += " " + strings.TrimSpace(k) + " "
-		case k != "text" || k != "checked":
+		case k != "text" && k != "checked" && k != "selected":
 			a += " " + strings.TrimSpace(k) + "=\"" + template.HTMLEscapeString(strings.TrimSpace(v)) + "\""
 		}
 	}
