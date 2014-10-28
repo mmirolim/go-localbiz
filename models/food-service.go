@@ -135,10 +135,10 @@ func (f *FoodService) Validate(s string, bs bson.M) VErrors {
 
 // get bson tag from field name
 func (fs FoodService) Bson(f string) string {
-	return Dic.FoodService.Bson(f)
+	return dic.FoodService.Bson(f)
 }
 
 // get field name from bson tag
 func (fs FoodService) Field(f string) string {
-	return Dic.FoodService.Field(f)
+	return dic.FoodService.Field(f)
 }

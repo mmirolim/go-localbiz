@@ -383,10 +383,10 @@ func (u *User) AllowBackend(id string) bool {
 
 // get bson tag from field name
 func (u User) Bson(f string) string {
-	return Dic.User.Bson(f)
+	return dic.User.Bson(f)
 }
 
 // get field name from bson tag
 func (u User) Field(f string) string {
-	return Dic.User.Field(f)
+	return dic.User.Field(f)
 }

@@ -24,7 +24,7 @@ var (
 	Cache, errCache = cache.NewCache("redis", `{"conn":":6379"}`)
 	cachePrefix     = beego.AppConfig.String("cache::prefix")
 	DocNotFound     = mgo.ErrNotFound
-	Dic             ModelDic
+	dic             ModelDic
 	T               = i18n.IdentityTfunc
 	// regex patters
 	reg_alpha_dash = regexp.MustCompile("[^\\d\\w-_]")
@@ -54,9 +54,9 @@ func InitConnection() {
 	var user User
 	var fs FoodService
 	var addr Address
-	Dic.Address = NewBsonDic(&addr)
-	Dic.User = NewBsonDic(&user)
-	Dic.FoodService = NewBsonDic(&fs)
+	dic.Address = NewBsonDic(&addr)
+	dic.User = NewBsonDic(&user)
+	dic.FoodService = NewBsonDic(&fs)
 	// init indexes of models and panic if something wrong
 	err = DocInitIndex(&fs)
 	panicOnErr(err)
@@ -338,7 +338,7 @@ func FmtString(prop string, actions []string) string {
 	}
 	return prop
 }
-
+// @todo refactor generation of cache keys
 func genCacheKey(table string, method string, queries ...interface{}) string {
 	var key string
 	for _, v := range queries {
@@ -487,11 +487,11 @@ func (b *BsonDic) Field(f string) string {
 }
 
 func (a Address) Bson(f string) string {
-	return Dic.Address.Bson(f)
+	return dic.Address.Bson(f)
 }
 
 func (a Address) Field(f string) string {
-	return Dic.Address.Field(f)
+	return dic.Address.Field(f)
 }
 
 func (v *VErrors) Set(key string, msg VMsg) {
