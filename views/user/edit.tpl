@@ -10,5 +10,5 @@
     </ul>
 </div>
 <div id="form-signup">
-   [[ .formUser ]]
+   [[ .userEditForm ]]
 </div>

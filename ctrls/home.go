@@ -17,10 +17,9 @@ func (c *Home) Get() {
 	c.Data["Lang"] = c.Lang
 	c.Data["Title"] = "Yalp.uz"
 	c.Data["Name"] = "My name is Mirolim!"
-	c.Data["Person"] = map[string]interface{}{"Person": "Mirolim"}
-	isAuth := c.GetSession("isAuth")
-	if isAuth != nil {
-		c.Data["isAuth"] = isAuth.(bool)
+	uid := c.GetSession("uid")
+	if uid != nil {
+		c.Data["Person"] = map[string]interface{}{"Person": AuthUser.FirstName}
 	}
 }
 
