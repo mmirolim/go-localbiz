@@ -46,6 +46,10 @@
         "translation": "поле {{ .Field }} обязательно для заполнения"
     },
     {
+        "id": "valid_unique",
+        "translation": "{{ .Field }} занят"
+    },
+    {
         "id": "valid_bday",
         "translation": "поле {{ .Field }} неправильный формат даты"
     },

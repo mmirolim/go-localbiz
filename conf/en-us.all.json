@@ -46,6 +46,10 @@
         "translation": "{{ .Field }} should not be empty"
     },
     {
+        "id": "valid_unique",
+        "translation": "this {{ .Field }} is already taken"
+    },
+    {
         "id": "valid_bday",
         "translation": "{{ .Field }} wrong date format"
     },
