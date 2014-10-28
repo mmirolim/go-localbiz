@@ -311,8 +311,8 @@ func FormToBson(f map[string][]string) bson.M {
 	b := make(bson.M)
 
 	for k, v := range f {
-		// exclude _xsrf field
-		if v[0] != "" && k != "_xsrf" {
+		// exclude _xsrf and _id field
+		if v[0] != "" && k != "_xsrf" && k != "_id" {
 			b[k] = v[0]
 		}
 	}
@@ -338,6 +338,7 @@ func FmtString(prop string, actions []string) string {
 	}
 	return prop
 }
+
 // @todo refactor generation of cache keys
 func genCacheKey(table string, method string, queries ...interface{}) string {
 	var key string
@@ -504,6 +505,15 @@ func (v *VErrors) Set(key string, msg VMsg) {
 	}
 	vErrors[key] = append(vErrors[key], msg)
 	*v = vErrors
+}
+
+// add Validation errors to other validation errors
+func (ve *VErrors) Add(e VErrors) {
+	for k, v := range e {
+		for _, m := range v {
+			ve.Set(k, m)
+		}
+	}
 }
 
 func (v *VErrors) T(t i18n.TranslateFunc) map[string][]string {
