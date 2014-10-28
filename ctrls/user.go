@@ -4,7 +4,6 @@ import (
 	"github.com/astaxie/beego"
 	M "github.com/mmirolim/yalp-go/models"
 	"gopkg.in/mgo.v2/bson"
-	"html/template"
 )
 
 type User struct {
@@ -47,12 +46,10 @@ func (c *User) SignUp() {
 	default:
 		beego.Error("User.SignUp Not known social net name")
 	}
-
-	c.Data["csrfToken"] = template.HTML(c.XsrfFormHtml())
-	// prefill data from social account
-	c.Data["user"] = u
+	c.Data["userSignUpForm"] = u.Form(UrlFor("User.SignUp"), "create", c.XsrfFormHtml(), T)
 
 }
+
 func (c *User) SignUpProc() {
 	// @todo add description msg to return and aborts
 	var u M.User
@@ -79,29 +76,21 @@ func (c *User) SignUpProc() {
 	if u.Locale != "" {
 		u.Locale = c.Lang
 	}
-
-	u.UserName = f["username"][0]
-	u.FirstName = f["first_name"][0]
-	u.LastName = f["last_name"][0]
-	u.Email = f["email"][0]
-	u.Gender = f["gender"][0]
-	e := u.SetBday(f["bday"][0])
-
-	c.Data["csrfToken"] = template.HTML(c.XsrfFormHtml())
-	c.Data["user"] = u
-
-	if e != nil {
-		c.Data["vErrs"] = e.T(T)
+	// parse and validate values from form
+	ve := u.ParseForm(f, "create")
+	c.Data["userSignUpForm"] = u.Form(UrlFor("User.SignUp"), "create", c.XsrfFormHtml(), T)
+	if len(ve) != 0 {
+		c.Data["vErrs"] = ve.T(T)
 		return
 	}
 	// create new user
-	ves, err := M.DocCreate(&u)
+	ve, err := M.DocCreate(&u)
 	if err != nil {
 		beego.Error("User.SignUpProc DocCreate ", err)
 		c.Abort("500")
 	}
-	if ves != nil {
-		c.Data["vErrs"] = ves.T(T)
+	if len(ve) != 0 {
+		c.Data["vErrs"] = ve.T(T)
 		return
 	}
 	// clean session
@@ -140,7 +129,7 @@ func (c *User) Edit() {
 
 	c.Data["uid"] = AuthUser.ID.Hex()
 	// @todo istead hard coding use url helper
-	c.Data["formUser"] = u.Form(UrlFor("User.Edit"), c.XsrfFormHtml(), T)
+	c.Data["userEditForm"] = u.Form(UrlFor("User.Edit"), "edit", c.XsrfFormHtml(), T)
 }
 
 func (c *User) EditProc() {
@@ -151,31 +140,24 @@ func (c *User) EditProc() {
 	B := u.Bson
 
 	f := c.Ctx.Request.PostForm
-	c.Data["csrfToken"] = template.HTML(c.XsrfFormHtml())
-	c.Data["uid"] = AuthUser.ID.Hex()
-	u.ParseForm(f)
-	c.Data["user"] = u
-
-	bm := M.FormToBson(f)
-	// check and parse birthday
-	if _, ok := bm[B("Bday")]; ok {
-		v := u.SetBday(bm[B("Bday")].(string))
-		if v != nil {
-			c.Data["vErrs"] = v.T(T)
-			return
-		}
-		bm[B("Bday")] = u.Bday
+	ve := u.ParseForm(f, "edit")
+	c.Data["userEditForm"] = u.Form(UrlFor("User.Edit"), "edit", c.XsrfFormHtml(), T)
+	if len(ve) != 0 {
+		c.Data["vErrs"] = ve.T(T)
+		return
 	}
 
-	vErrs, err := M.DocUpdate(bson.M{B("ID"): AuthUser.ID}, &u, bm)
+	bm := M.FormToBson(f)
+	// set user id who updated data
+	bm[B("UpdatedBy")] = AuthUser.ID
+	ve, err := M.DocUpdate(bson.M{B("ID"): AuthUser.ID}, &u, bm)
 	//@todo handle login error properly with messages
 	if err != nil {
 		beego.Error("User.EditProc DocUpdate ", err)
 		c.Abort("500")
 	}
-
-	if vErrs != nil {
-		c.Data["vErrs"] = vErrs.T(T)
+	if len(ve) != 0 {
+		c.Data["vErrs"] = ve.T(T)
 		return
 	}
 

@@ -11,13 +11,17 @@ import (
 	"time"
 )
 
-// roles admin = 1, editor = 2, tester = 3, client = 4, user = 5
+// roles guest = 0, admin = 1, editor = 2, moderator = 3, tester = 4 client = 5, user = 6
+type Role int
+
 const (
-	roleAdmin  = 1
-	roleEditor = 2
-	roleTester = 3
-	roleClient = 4
-	roleUser   = 5
+	roleGuest Role = iota
+	roleAdmin
+	roleEditor
+	roleModerator
+	roleTester
+	roleClient
+	roleUser
 )
 
 type FBData struct {
@@ -74,18 +78,18 @@ type User struct {
 	Gender      string        `bson:"gender" json:"gender"`
 	Locale      string        `bson:"locale" json:"locale" json:"locale"`
 	LastLoginAt time.Time     `bson:"ll_at" json:"last_login_at"`
-	Role        int           `bson:"role" json:"role"`
+	Role        Role          `bson:"role" json:"role"`
 	Bday        time.Time     `bson:"bday,omitempty" json:"bday,omitempty"`
 	FBData      `bson:"fbd" json:"fb_data"`
 	GGData      `bson:"ggd" json:"gg_data"`
 	Address     `bson:"addr" json:"address"`
 	Geo         `bson:"loc,omitempty" json:"loc,omitempty"`
-	Deleted     bool      `bson:"del" json:"deleted"`
-	UpdatedAt   time.Time `bson:"up_at" json:"updated_at"`
-	CreatedAt   time.Time `bson:"cr_at" json:"created_at"`
-	CreatedBy   string    `bson:"cr_by" json:"created_by"`
-	UpdatedBy   string    `bson:"up_by" json:"updated_by"`
-	IsAdmin     bool      `bson:"adm,omitempty" json:"is_admin,omitempty"`
+	Deleted     bool          `bson:"del" json:"deleted"`
+	UpdatedAt   time.Time     `bson:"up_at" json:"updated_at"`
+	CreatedAt   time.Time     `bson:"cr_at" json:"created_at"`
+	CreatedBy   bson.ObjectId `bson:"cr_by,omitempty" json:"created_by"`
+	UpdatedBy   bson.ObjectId `bson:"up_by,omitempty" json:"updated_by"`
+	IsAdmin     bool          `bson:"adm,omitempty" json:"is_admin,omitempty"`
 }
 
 func (u User) GetC() string {
@@ -202,10 +206,10 @@ func (u *User) SetDefaults() {
 	// @todo updated at should not change when use just logins
 	u.UpdatedAt = time.Now()
 
-	if u.CreatedAt.Year() == 1 {
+	if u.CreatedAt.IsZero() {
 		u.CreatedAt = time.Now()
 	}
-	if u.LastLoginAt.Year() == 1 {
+	if u.LastLoginAt.IsZero() {
 		u.LastLoginAt = time.Now()
 	}
 	if u.Role == 0 {
@@ -249,44 +253,55 @@ func (u *User) SetBday(s string) VErrors {
 	return v
 }
 
-func (u *User) Form(a, x string, t i18n.TranslateFunc) template.HTML {
+// a - action, s - scenario like "create, edit", x - xsrf token, t - i18n translation func
+func (u *User) Form(a, s, x string, t i18n.TranslateFunc) template.HTML {
 	B := u.Bson
 	tag := utils.Html
 	type mp map[string]string
-	s := template.HTML("<form action=\"" + a + "\" method=\"post\">")
+	f := template.HTML("<form action=\"" + a + "\" method=\"post\">")
+	// add username field if user created
+	if s == "create" {
+		f += tag("label", mp{"for": B("UserName"), "text": t(B("UserName"))})
+		f += tag("input", mp{"type": "text", "name": B("UserName"), "value": u.UserName})
+	} else {
+		// add hidden user id field
+		f += tag("input", mp{"type": "hidden", "name": B("ID"), "value": u.ID.Hex()})
+	}
+	f += tag("label", mp{"for": B("FirstName"), "text": t(B("FirstName"))})
+	f += tag("input", mp{"type": "text", "name": B("FirstName"), "value": u.FirstName})
 
-	s += tag("label", mp{"for": B("FirstName"), "text": t(B("FirstName"))})
-	s += tag("input", mp{"type": "text", "name": B("FirstName"), "value": u.FirstName})
+	f += tag("label", mp{"for": B("LastName"), "text": t(B("LastName"))})
+	f += tag("input", mp{"type": "text", "name": B("LastName"), "value": u.LastName})
 
-	s += tag("label", mp{"for": B("LastName"), "text": t(B("LastName"))})
-	s += tag("input", mp{"type": "text", "name": B("LastName"), "value": u.LastName})
+	f += tag("label", mp{"for": B("Email"), "text": t(B("Email"))})
+	f += tag("input", mp{"type": "email", "name": B("Email"), "value": u.Email})
 
-	s += tag("label", mp{"for": B("Email"), "text": t(B("Email"))})
-	s += tag("input", mp{"type": "email", "name": B("Email"), "value": u.Email})
+	f += tag("label", mp{"for": B("Bday"), "text": t(B("Bday"))})
+	f += tag("input", mp{"type": "date", "name": B("Bday"), "value": u.Bday.String()})
 
-	s += tag("label", mp{"for": B("Bday"), "text": t(B("Bday"))})
-	s += tag("input", mp{"type": "date", "name": B("Bday"), "value": u.Bday.String()})
-
-	s += tag("label", mp{"for": B("Gender"), "text": t(B("Gender"))})
+	f += tag("label", mp{"for": B("Gender"), "text": t(B("Gender"))})
 	var cm, cf = "", ""
 	if u.Gender == "male" {
 		cm = "true"
 	} else {
 		cf = "true"
 	}
-	s += tag("input", mp{"type": "radio", "name": B("Gender"), "value": t("male"), "checked": cm})
-	s += tag("input", mp{"type": "radio", "name": B("Gender"), "value": t("female"), "checked": cf})
+	f += template.HTML("<select name=\"" + B("Gender") + "\">")
+	f += tag("option", mp{"value": t("male"), "selected": cm, "text": t("male")})
+	f += tag("option", mp{"value": t("female"), "selected": cf, "text": t("female")})
+	f += template.HTML("</select>")
+	f += template.HTML(x)
 
-	s += template.HTML(x)
+	f += tag("input", mp{"type": "submit", "name": "save", "value": t("save")})
 
-	s += tag("input", mp{"type": "submit", "name": "save", "value": t("save")})
-
-	s += template.HTML("</form>")
-	return template.HTML(s)
+	f += template.HTML("</form>")
+	return template.HTML(f)
 }
 
-func (u *User) ParseForm(m map[string][]string) {
+// parse form to user struct and validate with s - scenario
+func (u *User) ParseForm(m map[string][]string, s string) VErrors {
 	B := u.Bson
+	vErrs := make(VErrors)
 	// @todo think about useing reflection
 	for k, v := range m {
 		switch k {
@@ -301,13 +316,25 @@ func (u *User) ParseForm(m map[string][]string) {
 		case B("Gender"):
 			u.Gender = v[0]
 		case B("Bday"):
-			// @todo handle err properly
-			_ = u.SetBday(v[0])
+			// if bday field not empty convert to proper type
+			if v[0] != "" {
+				e := u.SetBday(v[0])
+				if e != nil {
+					vErrs.Add(e)
+				}
+			}
 		}
 	}
+	// create bson field map to validate
+	b := FormToBson(m)
+	e := u.Validate(s, b)
+	if e != nil {
+		vErrs.Add(e)
+	}
+	return vErrs
 }
 
-// validate field of DocModel
+// validate User properties with s - scenario
 //@todo refactor to be dry
 func (u *User) Validate(s string, bs bson.M) VErrors {
 	v := Validator{}
@@ -319,17 +346,16 @@ func (u *User) Validate(s string, bs bson.M) VErrors {
 	// only provided in bson map fields
 	// else validate user properties
 	// do not update username
-	delete(bs, b("UserName"))
-	if v.Scenario == "update" {
-		for k, val := range bs {
-			uMap[k] = val
-		}
-
-	} else {
+	if v.Scenario == "create" {
 		uMap[b("UserName")] = u.UserName
 		uMap[b("FirstName")] = u.FirstName
 		uMap[b("LastName")] = u.LastName
 		uMap[b("Email")] = u.Email
+	} else {
+		delete(bs, b("UserName"))
+		for k, val := range bs {
+			uMap[k] = val
+		}
 	}
 	for k, val := range uMap {
 		switch k {
@@ -372,7 +398,7 @@ func (u *User) AllowBackend(id string) bool {
 		beego.Error("BaseCtrl.Prepare DocFindOne ", err)
 		return false
 	}
-	r := [...]int{roleAdmin, roleEditor, roleTester}
+	r := [...]Role{roleAdmin, roleEditor, roleTester}
 	for _, v := range r {
 		if user.Role == v {
 			return true
