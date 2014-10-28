@@ -365,7 +365,7 @@ func (u *User) Validate(s string, bs bson.M) VErrors {
 			v.Size(x, k, 2, 100)
 			v.AlphaDash(x, k)
 			v.NotContainStr(x, k, []string{"admin", "administrator", "админ", "администратор"})
-			v.UniqueDoc(k, u.GetC(), bson.M{k: x})
+			v.UniqueDoc(k, x, u.GetC())
 
 		case b("FirstName"):
 			x := val.(string)
@@ -379,11 +379,13 @@ func (u *User) Validate(s string, bs bson.M) VErrors {
 
 		case b("Email"):
 			x := val.(string)
-			// it is not required validate only if not empty
-			if x != "" {
-				v.Email(x, k)
-				v.Size(x, k, 5, 100)
+			// it is not required, validate only if not empty
+			if x == "" {
+				break
 			}
+			v.Email(x, k)
+			v.Size(x, k, 5, 100)
+			v.UniqueDoc(k, x, u.GetC())
 		}
 	}
 

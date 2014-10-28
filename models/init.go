@@ -39,6 +39,7 @@ type DocModel interface {
 	Validate(s string, bs bson.M) VErrors
 	GetLocation() Geo
 }
+
 //
 func Initialize() {
 	MongoHost = beego.AppConfig.String("db::mongohost")
@@ -237,7 +238,7 @@ func DocUpdate(q bson.M, m DocModel, flds bson.M) (VErrors, error) {
 }
 
 // @todo implement mgo Change to do atomic updating, upserting or removing
-func DocChange(q bson.M, m DocModel, flds bson.M)/* (VErrors, error) */{
+func DocChange(q bson.M, m DocModel, flds bson.M) /* (VErrors, error) */ {
 
 }
 
@@ -299,13 +300,13 @@ func (v *Validator) NotContainStr(p, k string, ss []string) {
 	}
 }
 
-// check in mongo collection if unique
-func (v *Validator) UniqueDoc(k, c string, b bson.M) {
+// check in mongo collection if unique k field name, v value, c collection
+func (v *Validator) UniqueDoc(k string, x interface{}, c string) {
 	sess := MgoSession.Copy()
 	defer sess.Close()
-
-	collection := sess.DB(MongoDbName).C(c)
-	n, err := collection.Find(b).Select(bson.M{k: 1}).Count()
+	b := bson.M{k: x}
+	col := sess.DB(MongoDbName).C(c)
+	n, err := col.Find(b).Select(bson.M{k: 1}).Count()
 	if err == nil && n > 0 {
 		v.Errors.Set(k, VMsg{Msg: "valid_unique", Params: map[string]interface{}{"Field": k}})
 	}

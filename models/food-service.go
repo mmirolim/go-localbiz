@@ -117,10 +117,10 @@ func (f *FoodService) FmtFields() {
 	f.City = strings.ToLower(f.City)
 }
 func (f *FoodService) SetDefaults() {
-	if f.CreatedAt.Year() == 1 {
+	if f.CreatedAt.IsZero() {
 		f.CreatedAt = time.Now()
 	}
-	if f.UpdatedAt.Year() == 1 {
+	if f.UpdatedAt.IsZero() {
 		f.UpdatedAt = time.Now()
 	}
 }
