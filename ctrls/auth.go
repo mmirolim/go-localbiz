@@ -77,6 +77,8 @@ func (c *Auth) Login() {
 }
 
 func (c *Auth) Logout() {
+	// empty data in Authenticated user struct
+	AuthUser = M.User{}
 	c.DestroySession()
 	c.Redirect("/", 302)
 }
@@ -148,11 +150,11 @@ func (c *Auth) Authorize() {
 	// search by social id
 	switch uData.(type) {
 	case *M.FBData:
-		sid = bson.M{"fb_data.id": uData.(*M.FBData).ID}
+		sid = bson.M{user.Bson("FBData") + ".id": uData.(*M.FBData).ID}
 		// get value and typecast to proper data type
 		c.SetSession("newUserData", *uData.(*M.FBData))
 	case *M.GGData:
-		sid = bson.M{"gg_data.id": uData.(*M.GGData).ID}
+		sid = bson.M{user.Bson("GGData") + ".id": uData.(*M.GGData).ID}
 		c.SetSession("newUserData", *uData.(*M.GGData))
 	default:
 		beego.Error("userData type unkown")
