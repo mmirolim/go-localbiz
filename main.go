@@ -16,9 +16,9 @@ func initialize() {
 	ctrls.IsPro = beego.RunMode == "prod"
 
 	// init ctrl
-	ctrls.InitApp()
-	// init connection to mongodb
-	models.InitConnection()
+	ctrls.Initialize()
+	// initialize models
+	models.Initialize()
 
 }
 

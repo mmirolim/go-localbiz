@@ -20,7 +20,7 @@ var (
 	UrlFor    = beego.UrlFor
 )
 
-func InitApp() {
+func Initialize() {
 	initLocales()
 	// register getUrl func
 	// @todo use default url builder

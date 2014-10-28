@@ -39,8 +39,8 @@ type DocModel interface {
 	Validate(s string, bs bson.M) VErrors
 	GetLocation() Geo
 }
-
-func InitConnection() {
+//
+func Initialize() {
 	MongoHost = beego.AppConfig.String("db::mongohost")
 	MongoDbName = beego.AppConfig.String("db::mongodbname")
 	session, err := mgo.Dial(MongoHost)
@@ -233,6 +233,11 @@ func DocUpdate(q bson.M, m DocModel, flds bson.M) (VErrors, error) {
 	err = collection.Update(q, bson.M{"$set": flds})
 
 	return vErrors, err
+
+}
+
+// @todo implement mgo Change to do atomic updating, upserting or removing
+func DocChange(q bson.M, m DocModel, flds bson.M)/* (VErrors, error) */{
 
 }
 
