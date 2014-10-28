@@ -18,15 +18,15 @@
         }
     },
     {
-        "id": "username",
+        "id": "uname",
         "translation": "логин"
     },
     {
-        "id": "first_name",
+        "id": "fname",
         "translation": "имя"
     },
     {
-        "id": "last_name",
+        "id": "lname",
         "translation": "фамилия"
     },
     {
@@ -44,6 +44,10 @@
     {
         "id": "valid_required",
         "translation": "поле {{ .Field }} обязательно для заполнения"
+    },
+    {
+        "id": "valid_bday",
+        "translation": "поле {{ .Field }} неправильный формат даты"
     },
     {
         "id": "valid_min",

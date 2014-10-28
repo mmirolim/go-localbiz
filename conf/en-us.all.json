@@ -18,15 +18,15 @@
         }
     },
     {
-        "id": "username",
+        "id": "uname",
         "translation": "Username"
     },
     {
-        "id": "first_name",
+        "id": "fname",
         "translation": "first name"
     },
     {
-        "id": "last_name",
+        "id": "lname",
         "translation": "family name"
     },
     {
@@ -44,6 +44,10 @@
     {
         "id": "valid_required",
         "translation": "{{ .Field }} should not be empty"
+    },
+    {
+        "id": "valid_bday",
+        "translation": "{{ .Field }} wrong date format"
     },
     {
         "id": "valid_min",
