@@ -418,3 +418,23 @@ func (u User) Bson(f string) string {
 func (u User) Field(f string) string {
 	return dic.User.Field(f)
 }
+
+func (u *User) Create() (VErrors, error) {
+	// set unique ObjectID
+	if u.ID.Hex() == "" {
+		u.ID = bson.NewObjectId()
+	}
+	return DocCreate(u)
+}
+
+func (u *User) Update(f bson.M) (VErrors, error) {
+	return DocUpdate(bson.M{"_id": u.ID}, u, f)
+}
+
+func (u *User) FindById(id string, t int64) error {
+	return DocFindOne(bson.M{"_id": bson.ObjectIdHex(id)}, bson.M{}, u, t)
+}
+
+func (u *User) FindOne(q bson.M, t int64) error {
+	return DocFindOne(q, bson.M{}, u, t)
+}

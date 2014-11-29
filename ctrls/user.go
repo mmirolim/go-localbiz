@@ -18,7 +18,7 @@ func (c *User) Get() {
 	n := c.Ctx.Input.Param(":username")
 
 	var u M.User
-	err := M.DocFindOne(bson.M{u.Bson("UserName"): n}, bson.M{}, &u, 60)
+	err := u.FindOne(bson.M{u.Bson("UserName"): n}, 60)
 	if err != nil {
 		beego.Error(err)
 		c.Abort("404")
@@ -84,7 +84,7 @@ func (c *User) SignUpProc() {
 		return
 	}
 	// create new user
-	ve, err := M.DocCreate(&u)
+	ve, err := u.Create()
 	if err != nil {
 		beego.Error("User.SignUpProc DocCreate ", err)
 		c.Abort("500")
@@ -96,14 +96,10 @@ func (c *User) SignUpProc() {
 	// clean session
 	c.DelSession("newUserData")
 	//@todo should redirect after successeful signup to user account to add extra info and img
-
-	// redirect to user's page
-	n := u.Bson("UserName")
-	err = M.DocFindOne(bson.M{n: u.UserName}, bson.M{n: 1}, &u, 0)
-
-	// set user data to session
+	// set user uid to session
 	c.SetSession("uid", u.ID.Hex())
 
+	// redirect to user's page
 	var r string
 	if !check("User.SignUpProc DocFineOne ", err) {
 		r = "/user/" + u.UserName
@@ -119,9 +115,8 @@ func (c *User) Edit() {
 	c.TplNames = "user/edit.tpl"
 	// uid not nil checked in isAuth filter
 	var u M.User
-	B := u.Bson
 	// @todo dont cache if user edits page Or invalidate cache on update
-	err := M.DocFindOne(bson.M{B("ID"): AuthUser.ID}, bson.M{}, &u, 0)
+	err := u.FindById(AuthUser.ID.Hex(), 0)
 	if err != nil {
 		beego.Error(err)
 		c.Abort("404")
@@ -150,7 +145,8 @@ func (c *User) EditProc() {
 	bm := M.FormToBson(f)
 	// set user id who updated data
 	bm[B("UpdatedBy")] = AuthUser.ID
-	ve, err := M.DocUpdate(bson.M{B("ID"): AuthUser.ID}, &u, bm)
+	u.ID = AuthUser.ID
+	ve, err := u.Update(bm)
 	//@todo handle login error properly with messages
 	if err != nil {
 		beego.Error("User.EditProc DocUpdate ", err)
@@ -159,13 +155,6 @@ func (c *User) EditProc() {
 	if len(ve) != 0 {
 		c.Data["vErrs"] = ve.T(T)
 		return
-	}
-
-	// get updated user object
-	err = M.DocFindOne(bson.M{B("ID"): AuthUser.ID}, bson.M{}, &u, 0)
-	if err != nil {
-		beego.Error("User.EditProc ", err)
-		c.Abort("500")
 	}
 
 }
