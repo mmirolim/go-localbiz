@@ -2,12 +2,13 @@ package ctrls
 
 import (
 	"encoding/json"
+	"net/http"
+	"time"
+
 	"github.com/astaxie/beego"
 	"github.com/golang/oauth2"
 	M "github.com/mmirolim/yalp-go/models"
 	"gopkg.in/mgo.v2/bson"
-	"net/http"
-	"time"
 )
 
 type Auth struct {
@@ -20,16 +21,16 @@ const (
 )
 
 var facebookConf, errFb = oauth2.NewConfig(&oauth2.Options{
-	ClientID:     "892068490806056",
-	ClientSecret: "194a38221d6b5b2313149b3b3510b60d",
+	ClientID:     beego.AppConfig.String("oauth::facebookID"),
+	ClientSecret: beego.AppConfig.String("oauth::facebookSecret"),
 	RedirectURL:  "http://yalp.go/auth/" + facebook,
 },
 	"https://www.facebook.com/dialog/oauth",
 	"https://graph.facebook.com/oauth/access_token")
 
 var googleConf, errG = oauth2.NewConfig(&oauth2.Options{
-	ClientID:     "924835338434-u4osuetj2bm4j67r60g0vjur080reb97.apps.googleusercontent.com",
-	ClientSecret: "DxC13zzfLWDV0TiqEMKrzkW4",
+	ClientID:     beego.AppConfig.String("oauth::googleID"),
+	ClientSecret: beego.AppConfig.String("oauth::googleSecret"),
 	RedirectURL:  "http://192.168.1.107.xip.io/auth/" + google,
 	Scopes:       []string{"openid", "profile"},
 },

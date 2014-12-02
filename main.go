@@ -37,7 +37,7 @@ func main() {
 	// @todo handle properly csrf token expire
 	beego.EnableXSRF = true
 	// @todo change csrf key
-	beego.XSRFKEY = "61oETzKXQAGaYdkL5gEmGeJJFuYh7EQnp2XdTP1o"
+	beego.XSRFKEY = beego.AppConfig.String("xsrfKey")
 	beego.XSRFExpire = 3600
 
 	// change default tpl tags
